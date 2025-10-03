@@ -1,0 +1,7 @@
+# .gitignore
+# Secrets (never commit!)
+**/secret.yaml
+!**/sealed-secret.yaml
+
+# OS files
+.DS_Store
