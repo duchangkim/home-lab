@@ -4,9 +4,10 @@ metadata:
   name: traefik-dashboard
   namespace: kube-system
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod # 추가
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
-  tls: # 추가
+  tls:
     - hosts:
         - traefik.duchi.click
       secretName: traefik-dashboard-tls
