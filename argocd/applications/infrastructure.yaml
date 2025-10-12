@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/duchangkim/home-lab.git # Git 레포지토리 URL로 변경하세요
+    repoURL: https://github.com/duchangkim/home-lab.git
     targetRevision: main
     path: infrastructure
   destination:
