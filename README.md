@@ -4,11 +4,11 @@ k3s와 ArgoCD를 사용한 GitOps 기반 홈서버 관리 프로젝트입니다.
 
 ## 🏠 홈랩 서비스
 
+- **Blog**: 개인 블로그 (https://duchi.click) - 루트 도메인
 - **OpenWebUI**: AI 챗봇 인터페이스 (https://ai.duchi.click)
-- **Nextcloud**: 개인 클라우드 스토리지
-- **Blog**: Next.js 블로그
 - **ArgoCD**: GitOps CD 플랫폼 (https://argocd.duchi.click)
 - **Traefik**: Ingress Controller (http://traefik.duchi.click)
+- **Nextcloud**: 개인 클라우드 스토리지 (예정)
 
 ## 🚀 실제 홈랩 배포
 
@@ -28,7 +28,8 @@ chmod +x setup/homelab-setup.sh
 A 레코드 예시:
 *.duchi.click    →  <홈랩-서버-IP>
 
-또는 개별 서브도메인:
+또는 개별 도메인/서브도메인:
+duchi.click          →  <홈랩-서버-IP>  (블로그 - 루트 도메인)
 argocd.duchi.click   →  <홈랩-서버-IP>
 ai.duchi.click       →  <홈랩-서버-IP>
 traefik.duchi.click  →  <홈랩-서버-IP>
@@ -37,6 +38,7 @@ whoami.duchi.click   →  <홈랩-서버-IP>
 
 ### 접속 정보
 
+- **Blog**: https://duchi.click (루트 도메인)
 - **ArgoCD**: https://argocd.duchi.click (admin / 초기비밀번호)
 - **OpenWebUI**: https://ai.duchi.click
 - **Traefik Dashboard**: http://traefik.duchi.click
@@ -76,9 +78,9 @@ kubectl apply -f argocd/applications/
 │   └── traefik/             # Ingress Controller 대시보드
 ├── applications/            # 애플리케이션 매니페스트
 │   ├── openwebui/          # AI 챗봇 UI
+│   ├── blog/               # 개인 블로그 (ghcr.io/duchangkim/duchi-click)
 │   ├── test-app/           # 테스트 앱 (whoami)
-│   ├── nextcloud/          # (예정)
-│   └── blog/               # (예정)
+│   └── nextcloud/          # (예정)
 ├── argocd/                 # ArgoCD Application 정의
 │   └── applications/       # Git을 통한 배포 관리
 └── setup/                  # 설치 스크립트

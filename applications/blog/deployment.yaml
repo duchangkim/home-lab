@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blog
+  template:
+    metadata:
+      labels:
+        app: blog
+    spec:
+      containers:
+        - name: blog
+          image: ghcr.io/duchangkim/duchi-click:latest
+          imagePullPolicy: Always # 항상 최신 이미지 가져오기
+          ports:
+            - containerPort: 3011
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3011"
+            - name: HOSTNAME
+              value: "0.0.0.0"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blog
+  namespace: default
+spec:
+  ports:
+    - port: 3011
+      targetPort: 3011
+  selector:
+    app: blog
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blog
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+    - hosts:
+        - duchi.click
+      secretName: blog-tls
+  rules:
+    - host: duchi.click
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: blog
+                port:
+                  number: 3011
