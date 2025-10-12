@@ -63,9 +63,15 @@ kind: Ingress
 metadata:
   name: openwebui
   namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
+  tls:
+    - hosts:
+        - ai.duchi.click
+    secretName: openwebui-tls
   rules:
-    - host: openwebui.local
+    - host: ai.duchi.click
       http:
         paths:
           - path: /

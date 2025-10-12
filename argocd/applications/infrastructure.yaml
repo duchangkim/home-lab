@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infrastructure
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/duchangkim/home-lab.git # Git 레포지토리 URL로 변경하세요
+    targetRevision: main
+    path: infrastructure
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: false # 인프라는 자동 삭제 방지
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

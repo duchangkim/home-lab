@@ -36,9 +36,15 @@ kind: Ingress
 metadata:
   name: whoami
   namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
+  tls:
+    - hosts:
+        - whoami.duchi.click
+      secretName: whoami-tls
   rules:
-    - host: whoami.local
+    - host: whoami.duchi.click
       http:
         paths:
           - path: /
