@@ -98,7 +98,7 @@ echo ""
 
 # 9. Sealed Secrets 설치
 echo "📋 Step 9: Sealed Secrets Controller 설치"
-sudo k3s kubectl apply -f infrastructure/sealed-secrets/controller.yaml
+sudo k3s kubectl apply -k infrastructure/sealed-secrets/
 echo -e "${GREEN}✅ Sealed Secrets 설치 완료${NC}"
 echo ""
 
