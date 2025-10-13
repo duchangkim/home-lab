@@ -8,7 +8,7 @@ k3s와 ArgoCD를 사용한 GitOps 기반 홈서버 관리 프로젝트입니다.
 - **OpenWebUI**: AI 챗봇 인터페이스 (https://ai.duchi.click)
 - **ArgoCD**: GitOps CD 플랫폼 (https://argocd.duchi.click)
 - **Traefik**: Ingress Controller (http://traefik.duchi.click)
-- **Nextcloud**: 개인 클라우드 스토리지 (예정)
+- To be continued...
 
 ## 🚀 실제 홈랩 배포
 
@@ -20,26 +20,10 @@ chmod +x setup/homelab-setup.sh
 ./setup/homelab-setup.sh
 ```
 
-### DNS 설정
-
-도메인 제공자에서 다음 레코드를 추가하세요:
-
-```
-A 레코드 예시:
-*.duchi.click    →  <홈랩-서버-IP>
-
-또는 개별 도메인/서브도메인:
-duchi.click          →  <홈랩-서버-IP>  (블로그 - 루트 도메인)
-argocd.duchi.click   →  <홈랩-서버-IP>
-ai.duchi.click       →  <홈랩-서버-IP>
-traefik.duchi.click  →  <홈랩-서버-IP>
-whoami.duchi.click   →  <홈랩-서버-IP>
-```
-
 ### 접속 정보
 
-- **Blog**: https://duchi.click (루트 도메인)
-- **ArgoCD**: https://argocd.duchi.click (admin / 초기비밀번호)
+- **Blog**: https://duchi.click
+- **ArgoCD**: https://argocd.duchi.click
 - **OpenWebUI**: https://ai.duchi.click
 - **Traefik Dashboard**: http://traefik.duchi.click
 - **Test App**: https://whoami.duchi.click
@@ -115,6 +99,8 @@ git commit -m "Add sealed secret"
 
 # ⚠️ secret.yaml은 .gitignore에 추가되어 있어 커밋되지 않습니다
 ```
+
+또는 로컬에서 pub-cert.pem을 가지고 시크릿 암호화 후 저장소에 push
 
 자세한 사용법은 [infrastructure/sealed-secrets/README.md](infrastructure/sealed-secrets/README.md)를 참조하세요.
 
