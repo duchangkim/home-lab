@@ -36,6 +36,13 @@ spec:
                 secretKeyRef:
                   name: openwebui-secret
                   key: webui-secret-key
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openwebui-secret
+                  key: openrouter-api-key
+            - name: OPENAI_API_BASE_URL
+              value: "https://openrouter.ai/api/v1"
           volumeMounts:
             - name: data
               mountPath: /app/backend/data
