@@ -36,8 +36,6 @@ spec:
                 secretKeyRef:
                   name: openwebui-secret
                   key: webui-secret-key
-            # - name: OLLAMA_BASE_URL
-            #   value: "http://ollama:11434"
           volumeMounts:
             - name: data
               mountPath: /app/backend/data
@@ -69,7 +67,7 @@ spec:
   tls:
     - hosts:
         - ai.duchi.click
-    secretName: openwebui-tls
+      secretName: openwebui-tls
   rules:
     - host: ai.duchi.click
       http:
