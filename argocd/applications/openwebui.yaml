@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
   annotations:
     # ArgoCD Image Updater 설정
-    argocd-image-updater.argoproj.io/image-list: openwebui=ghcr.io/open-webui/open-webui
+    argocd-image-updater.argoproj.io/image-list: openwebui=ghcr.io/open-webui/open-webui:main
     argocd-image-updater.argoproj.io/openwebui.update-strategy: digest
     argocd-image-updater.argoproj.io/openwebui.schedule: "0 0 * * 2"
     argocd-image-updater.argoproj.io/write-back-method: argocd
