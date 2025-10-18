@@ -9,6 +9,7 @@ resources:
   # 커스텀 리소스
   - namespace.yaml
   - ingressroute.yaml
+  - certificate.yaml
 
 # ConfigMap을 생성하거나 merge
 configMapGenerator:
