@@ -10,6 +10,9 @@ resources:
   - namespace.yaml
   - ingressroute.yaml
 
-# ConfigMap merge
-patchesStrategicMerge:
-  - server-config.yaml
+# ConfigMap을 생성하거나 merge
+configMapGenerator:
+  - name: argocd-cmd-params-cm
+    behavior: merge
+    literals:
+      - server.insecure=true
