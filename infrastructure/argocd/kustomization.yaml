@@ -8,4 +8,4 @@ resources:
   - https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
   # 커스텀 리소스
   - namespace.yaml
-  - ingress.yaml
+  - ingressroute.yaml
