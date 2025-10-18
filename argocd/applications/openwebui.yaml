@@ -6,12 +6,11 @@ metadata:
   annotations:
     # ArgoCD Image Updater 설정
     argocd-image-updater.argoproj.io/image-list: openwebui=ghcr.io/open-webui/open-webui
-    # main 태그의 최신 다이제스트(SHA) 추적
     argocd-image-updater.argoproj.io/openwebui.update-strategy: digest
-    # 매주 화요일 00시 체크 (cron: 분 시 일 월 요일, 2=화요일)
     argocd-image-updater.argoproj.io/openwebui.schedule: "0 0 * * 2"
-    # ArgoCD parameter override로 관리 (Git 커밋 없음)
     argocd-image-updater.argoproj.io/write-back-method: argocd
+    # Kustomize 이미지 업데이트 경로 지정
+    argocd-image-updater.argoproj.io/write-back-target: "kustomization"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
