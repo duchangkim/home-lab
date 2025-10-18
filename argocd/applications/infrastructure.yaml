@@ -13,7 +13,6 @@ spec:
     path: infrastructure
   destination:
     server: https://kubernetes.default.svc
-    namespace: kube-system
   syncPolicy:
     automated:
       prune: false # 인프라는 자동 삭제 방지

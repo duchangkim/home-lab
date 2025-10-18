@@ -13,5 +13,21 @@ spec:
       services:
         - name: argocd-server
           port: 80
+          # insecure 모드이므로 scheme을 http로 명시
+          scheme: h2c
+      middlewares:
+        - name: argocd-headers
   tls:
     secretName: argocd-server-tls
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: argocd-headers
+  namespace: argocd
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+    customResponseHeaders:
+      X-Forwarded-Proto: "https"
