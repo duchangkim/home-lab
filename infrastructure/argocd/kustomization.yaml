@@ -9,3 +9,4 @@ resources:
   # 커스텀 리소스
   - namespace.yaml
   - ingressroute.yaml
+  - server-config.yaml
