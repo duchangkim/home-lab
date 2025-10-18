@@ -15,7 +15,14 @@ spec:
     server: https://kubernetes.default.svc
   syncPolicy:
     automated:
-      prune: false # 인프라는 자동 삭제 방지
+      prune: false
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+    # 초기 sync를 위한 설정 추가
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
