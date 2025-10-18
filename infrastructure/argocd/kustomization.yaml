@@ -9,4 +9,7 @@ resources:
   # 커스텀 리소스
   - namespace.yaml
   - ingressroute.yaml
+
+# ConfigMap merge
+patchesStrategicMerge:
   - server-config.yaml
