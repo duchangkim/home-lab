@@ -36,7 +36,7 @@ patches:
     target:
       kind: Deployment
       name: argocd-dex-server
-  
+
   # argocd-server: API 서버
   - patch: |-
       - op: add
@@ -53,7 +53,7 @@ patches:
     target:
       kind: Deployment
       name: argocd-server
-  
+
   # repo-server: Git 저장소 관리
   - patch: |-
       - op: add
@@ -70,7 +70,7 @@ patches:
     target:
       kind: Deployment
       name: argocd-repo-server
-  
+
   # redis: 캐시
   - patch: |-
       - op: add
@@ -87,7 +87,7 @@ patches:
     target:
       kind: Deployment
       name: argocd-redis
-  
+
   # application-controller: 애플리케이션 상태 관리
   - patch: |-
       - op: add
