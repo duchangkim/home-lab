@@ -50,9 +50,36 @@ if command -v k3s &> /dev/null; then
     echo -e "${YELLOW}⚠️  k3s가 이미 설치되어 있습니다.${NC}"
     k3s --version
 else
+    echo "k3s 데이터 디렉토리 설정 중..."
+    # /mnt/ncdata 디렉토리 확인 및 생성
+    if [ -d "/mnt/ncdata" ]; then
+        sudo mkdir -p /mnt/ncdata/k3s
+        echo -e "${GREEN}✅ 데이터 디렉토리 생성: /mnt/ncdata/k3s${NC}"
+        
+        # k3s 설정 파일 생성
+        sudo mkdir -p /etc/rancher/k3s
+        sudo tee /etc/rancher/k3s/config.yaml > /dev/null <<EOF
+# K3s 데이터 디렉토리를 큰 디스크로 설정
+data-dir: /mnt/ncdata/k3s
+EOF
+        echo -e "${GREEN}✅ k3s 설정 파일 생성 완료${NC}"
+        echo "설정 내용:"
+        cat /etc/rancher/k3s/config.yaml
+    else
+        echo -e "${YELLOW}⚠️  /mnt/ncdata 디렉토리가 없습니다. 기본 경로를 사용합니다.${NC}"
+    fi
+    
+    echo ""
     echo "k3s 설치 중..."
     curl -sfL https://get.k3s.io | sh -
     echo -e "${GREEN}✅ k3s 설치 완료${NC}"
+    
+    # 데이터 디렉토리 확인
+    if [ -d "/mnt/ncdata/k3s" ]; then
+        echo "데이터 디렉토리: /mnt/ncdata/k3s"
+    else
+        echo "데이터 디렉토리: /var/lib/rancher/k3s (기본값)"
+    fi
 fi
 echo ""
 
