@@ -91,7 +91,7 @@ patches:
   # application-controller: 애플리케이션 상태 관리
   - patch: |-
       - op: add
-        path: /spec/template/spec/statefulset/0/resources
+        path: /spec/template/spec/containers/0/resources
         value:
           requests:
             memory: "128Mi"
