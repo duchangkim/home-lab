@@ -17,3 +17,90 @@ configMapGenerator:
     behavior: merge
     literals:
       - server.insecure=true
+
+# ArgoCD 컴포넌트들에 리소스 제한 추가
+patches:
+  # dex-server: ArgoCD 인증 컴포넌트
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            memory: "32Mi"
+            cpu: "10m"
+            ephemeral-storage: "100Mi"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"
+            ephemeral-storage: "200Mi"
+    target:
+      kind: Deployment
+      name: argocd-dex-server
+  
+  # argocd-server: API 서버
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+            ephemeral-storage: "100Mi"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+            ephemeral-storage: "500Mi"
+    target:
+      kind: Deployment
+      name: argocd-server
+  
+  # repo-server: Git 저장소 관리
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+            ephemeral-storage: "200Mi"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+            ephemeral-storage: "1Gi"
+    target:
+      kind: Deployment
+      name: argocd-repo-server
+  
+  # redis: 캐시
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            memory: "64Mi"
+            cpu: "25m"
+            ephemeral-storage: "50Mi"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+            ephemeral-storage: "100Mi"
+    target:
+      kind: Deployment
+      name: argocd-redis
+  
+  # application-controller: 애플리케이션 상태 관리
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/statefulset/0/resources
+        value:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+            ephemeral-storage: "100Mi"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+            ephemeral-storage: "500Mi"
+    target:
+      kind: StatefulSet
+      name: argocd-application-controller
