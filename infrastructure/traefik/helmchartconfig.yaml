@@ -5,11 +5,25 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
-    dashboard:
-      enabled: true
-    ports:
-      traefik:
-        expose: true
+    globalArguments:
+      - "--global.sendanonymoususage=false"
+      - "--global.checknewversion=false"
+
     additionalArguments:
-      - "--api.dashboard=true"
-      - "--api.insecure=true"
+      - "--serversTransport.insecureSkipVerify=true"
+      - "--log.level=INFO"
+
+    ports:
+      web:
+        redirectTo:
+          port: websecure
+      websecure:
+        tls:
+          enabled: true
+      traefik:
+        expose:
+          default: false  # 이 부분이 문제였을 수 있음
+
+    service:
+      enabled: true
+      type: LoadBalancer
