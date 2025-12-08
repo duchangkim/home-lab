@@ -33,24 +33,35 @@ chmod +x setup/homelab-setup.sh
 ### k3d로 로컬 테스트
 
 ```bash
-# 클러스터 생성
-./setup/k3d-cluster.sh
+# 1. 클러스터 생성
+sudo sh ./setup/k3d-cluster.sh
 
-# ArgoCD 설치
-kubectl apply -k infrastructure/argocd/
+# 2. 로컬 인프라 설치 (ArgoCD + Self-Signed Certs)
+sudo kubectl apply -k infrastructure/overlays/local/
 
-# /etc/hosts 설정
+# 3. ArgoCD 비밀번호 확인
+sudo kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+
+# 4. /etc/hosts 설정
 echo "127.0.0.1 argocd.local ai.local traefik.local" | sudo tee -a /etc/hosts
 
-# 애플리케이션 배포
-kubectl apply -f argocd/applications/
+# 5. 애플리케이션 배포 (infrastructure 제외)
+# 주의: infrastructure 앱은 로컬 설정을 덮어쓸 수 있으므로 배포하지 않습니다.
+sudo kubectl apply -f argocd/applications/blog.yaml
+sudo kubectl apply -f argocd/applications/openwebui.yaml
+sudo kubectl apply -f argocd/applications/test-app.yaml
+
+# 6. 애플리케이션 배포 상태 확인
+sudo kubectl get applications -n argocd
 ```
 
 ### 로컬 접속 정보
 
-- ArgoCD: http://argocd.local:8080
-- OpenWebUI: http://ai.local
+- ArgoCD: http://argocd.local:8080 (admin / 위에서 확인한 비밀번호)
+- OpenWebUI: http://ai.local (HTTPS 경고 무시)
 - Traefik: http://traefik.local
+
+> ⚠️ **참고**: 로컬 환경은 **Self-Signed 인증서**를 사용하여 운영 환경과 동일한 TLS 구성을 모의(Mocking)합니다. 브라우저에서 "안전하지 않음" 경고가 뜨면 무시하고 진행하세요.
 
 ## 📁 프로젝트 구조
 

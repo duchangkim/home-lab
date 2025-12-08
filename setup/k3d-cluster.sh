@@ -30,12 +30,28 @@ k3d cluster create ${CLUSTER_NAME} \
 
 echo "✅ 클러스터 생성 완료"
 
+# Traefik 준비 대기
+echo "⏳ Traefik이 준비될 때까지 대기 중..."
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=traefik -n kube-system --timeout=300s
+
+# CRD 확인
+echo "⏳ Traefik CRD 확인 중..."
+while ! kubectl get crd ingressroutes.traefik.io > /dev/null 2>&1; do
+    sleep 2
+    echo "  - CRD 대기 중..."
+done
+echo "✅ Traefik 준비 완료!"
+
 # kubectl 컨텍스트 확인
-kubectl config current-context
-kubectl get nodes
+sudo kubectl config current-context
+sudo kubectl get nodes
 
 echo ""
-echo "🎉 로컬 k3s 클러스터 준비 완료!"
-echo "다음 명령어로 ArgoCD를 설치하세요:"
-echo "  kubectl create namespace argocd"
-echo "  kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml"
+echo "🎉 로컬 k3d 클러스터 준비 완료!"
+echo "다음 명령어로 로컬 인프라(ArgoCD, Mock Certs 등)를 설치하세요:"
+echo "sudo kubectl apply -k infrastructure/overlays/local/"
+echo ""
+echo "그 후 애플리케이션 등록 (infrastructure 제외):"
+echo "sudo kubectl apply -f argocd/applications/blog.yaml"
+echo "sudo kubectl apply -f argocd/applications/openwebui.yaml"
+echo "sudo kubectl apply -f argocd/applications/test-app.yaml"

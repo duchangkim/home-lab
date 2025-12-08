@@ -96,47 +96,32 @@ echo "📋 Step 5: 클러스터 상태 확인"
 sudo k3s kubectl get nodes
 echo ""
 
-# 6. cert-manager 설치
-echo "📋 Step 6: cert-manager 설치"
-sudo k3s kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
-echo "cert-manager가 준비될 때까지 대기 중..."
+# 6. 통합 인프라 설치 (ArgoCD, cert-manager, Sealed Secrets 등)
+echo "📋 Step 6: 통합 인프라 설치 (프로덕션)"
+cd "$(dirname "$0")/.."
+
+# CRD 설치 및 컨트롤러 배포
+echo "📦 인프라 리소스 적용 중..."
+sudo k3s kubectl apply -k infrastructure/overlays/production/
+
+echo "⏳ 컨트롤러들이 준비될 때까지 대기 중..."
 sleep 30
 sudo k3s kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout=300s
-echo -e "${GREEN}✅ cert-manager 설치 완료${NC}"
-echo ""
-
-# 7. ArgoCD 설치
-echo "📋 Step 7: ArgoCD 설치"
-cd "$(dirname "$0")/.."
-sudo k3s kubectl apply -k infrastructure/argocd/
-echo "ArgoCD가 준비될 때까지 대기 중..."
-sleep 60
 sudo k3s kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
-echo -e "${GREEN}✅ ArgoCD 설치 완료${NC}"
+
+echo -e "${GREEN}✅ 통합 인프라 설치 완료${NC}"
 echo ""
 
-# 8. ArgoCD 초기 비밀번호 확인
-echo "📋 Step 8: ArgoCD 관리자 비밀번호"
+# 7. ArgoCD 초기 비밀번호 확인
+echo "📋 Step 7: ArgoCD 관리자 비밀번호"
 echo "Username: admin"
 echo -n "Password: "
 sudo k3s kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 echo ""
 echo ""
 
-# 9. Sealed Secrets 설치
-echo "📋 Step 9: Sealed Secrets Controller 설치"
-sudo k3s kubectl apply -k infrastructure/sealed-secrets/
-echo -e "${GREEN}✅ Sealed Secrets 설치 완료${NC}"
-echo ""
-
-# 10. cert-manager ClusterIssuer 설치
-echo "📋 Step 10: Let's Encrypt ClusterIssuer 설치"
-sudo k3s kubectl apply -f infrastructure/cert-manager/issuer.yaml
-echo -e "${GREEN}✅ ClusterIssuer 설치 완료${NC}"
-echo ""
-
-# 11. ArgoCD Applications 배포
-echo "📋 Step 11: ArgoCD Applications 등록"
+# 8. ArgoCD Applications 배포
+echo "📋 Step 8: ArgoCD Applications 등록"
 echo ""
 echo -e "${YELLOW}⚠️  중요: Git 레포지토리 URL 확인!${NC}"
 echo "argocd/applications/*.yaml 파일의 repoURL을 실제 Git 레포지토리로 변경하세요."
