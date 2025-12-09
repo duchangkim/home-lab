@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ../argocd
+  - ../argocd-image-updater
   - sealed-secrets
   - traefik/dashboard.yaml
   - traefik/helmchartconfig.yaml
