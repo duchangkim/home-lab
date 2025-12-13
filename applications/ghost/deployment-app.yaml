@@ -38,6 +38,8 @@ spec:
               # 설치된 모듈을 타겟 위치로 복사
               cp -r /tmp/adapter/node_modules/ghost-storage-adapter-s3/* /var/lib/ghost/content/adapters/storage/s3/
 
+              chown -R 1000:1000 /var/lib/ghost/content/adapters
+
               echo "Installation complete. File structure:"
               ls -R /var/lib/ghost/content/adapters/storage/s3
           volumeMounts:
