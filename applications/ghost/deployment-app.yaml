@@ -26,16 +26,23 @@ spec:
             - sh
             - -c
             - |
-              # S3 어댑터 설치 경로 생성
-              mkdir -p /content/adapters/storage/s3 && \
-              # 어댑터 다운로드 및 압축 해제 (ghost-storage-adapter-s3)
-              npm install ghost-storage-adapter-s3 --prefix /tmp && \
-              # 필요한 파일만 정확한 위치로 복사
-              cp -r /tmp/node_modules/ghost-storage-adapter-s3/* /content/adapters/storage/s3/ && \
-              ls -al /content/adapters/storage/s3
+              echo "Installing S3 adapter..."
+              # 임시 디렉토리에서 모듈 설치
+              mkdir -p /tmp/adapter
+              cd /tmp/adapter
+              npm install ghost-storage-adapter-s3
+
+              # 실제 사용할 위치 준비 (/var/lib/ghost/content/adapters/storage/s3)
+              mkdir -p /var/lib/ghost/content/adapters/storage/s3
+
+              # 설치된 모듈을 타겟 위치로 복사
+              cp -r /tmp/adapter/node_modules/ghost-storage-adapter-s3/* /var/lib/ghost/content/adapters/storage/s3/
+
+              echo "Installation complete. File structure:"
+              ls -R /var/lib/ghost/content/adapters/storage/s3
           volumeMounts:
             - name: adapter-storage
-              mountPath: /content/adapters/storage
+              mountPath: /var/lib/ghost/content/adapters/storage
 
       # 2. 메인 컨테이너
       containers: # 컨테이너 정의(도커)
