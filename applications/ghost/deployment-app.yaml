@@ -26,22 +26,26 @@ spec:
             - sh
             - -c
             - |
-              echo "Installing S3 adapter..."
-              # 임시 디렉토리에서 모듈 설치
-              mkdir -p /tmp/adapter
-              cd /tmp/adapter
+              echo "Installing S3 adapter with dependencies..."
+
+              # 타겟 디렉토리 준비
+              TARGET_DIR="/var/lib/ghost/content/adapters/storage/s3"
+              mkdir -p $TARGET_DIR
+
+              # 타겟 디렉토리로 이동하여 직접 설치 (의존성 포함)
+              cd $TARGET_DIR
+              npm init -y
               npm install ghost-storage-adapter-s3
 
-              # 실제 사용할 위치 준비 (/var/lib/ghost/content/adapters/storage/s3)
-              mkdir -p /var/lib/ghost/content/adapters/storage/s3
+              # Ghost가 모듈을 바로 로드할 수 있도록 index.js를 상위로 노출
+              cp node_modules/ghost-storage-adapter-s3/index.js .
+              cp -r node_modules/ghost-storage-adapter-s3/lib . 2>/dev/null || true
 
-              # 설치된 모듈을 타겟 위치로 복사
-              cp -r /tmp/adapter/node_modules/ghost-storage-adapter-s3/* /var/lib/ghost/content/adapters/storage/s3/
-
+              # 권한 수정
               chown -R 1000:1000 /var/lib/ghost/content/adapters
 
               echo "Installation complete. File structure:"
-              ls -R /var/lib/ghost/content/adapters/storage/s3
+              ls -lR $TARGET_DIR
           volumeMounts:
             - name: adapter-storage
               mountPath: /var/lib/ghost/content/adapters/storage
