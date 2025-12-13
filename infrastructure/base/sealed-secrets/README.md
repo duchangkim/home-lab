@@ -114,7 +114,10 @@ kubectl describe secret myapp-secret
 vim secret.yaml
 
 # 2. 다시 암호화
-kubeseal -f secret.yaml -w sealed-secret.yaml --format yaml
+kubeseal --cert path/pub-cert.pem \
+         -f secret.yaml \
+         -w sealed-secret.yaml \
+         --format yaml
 
 # 3. Git 커밋
 git add sealed-secret.yaml
