@@ -57,11 +57,14 @@ spec:
             - name: database__connection__host
               value: "ghost-mysql" # 나중에 만들 Service의 이름 (DNS)
             - name: database__connection__user
-              value: "ghost"
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-secret
+                  key: db-user
             - name: database__connection__password
               valueFrom: # Secret에서 비밀번호 가져오기
                 secretKeyRef:
-                  name: ghost-db-secret
+                  name: ghost-secret
                   key: db-password
             - name: database__connection__database
               value: "ghost_prod"
@@ -78,23 +81,23 @@ spec:
             - name: storage__s3__endpoint
               valueFrom:
                 secretKeyRef:
-                  name: ghost-storage-secret
+                  name: ghost-secret
                   key: r2-endpoint # https://<ACCOUNT_ID>.r2.cloudflarestorage.com
             - name: storage__s3__accessKeyId
               valueFrom:
                 secretKeyRef:
-                  name: ghost-storage-secret
+                  name: ghost-secret
                   key: r2-access-key
             - name: storage__s3__secretAccessKey
               valueFrom:
                 secretKeyRef:
-                  name: ghost-storage-secret
+                  name: ghost-secret
                   key: r2-secret-key
             # 이미지 URL 도메인
             - name: storage__s3__assetHost
               valueFrom:
                 secretKeyRef:
-                  name: ghost-storage-secret
+                  name: ghost-secret
                   key: r2-asset-host
             # 경로 스타일 강제 (R2 필수 설정)
             - name: storage__s3__forcePathStyle

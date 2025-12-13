@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghost-mysql
+  namespace: default
+  labels:
+    app: ghost
+    component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghost
+      component: database
+  template:
+    metadata:
+      labels:
+        app: ghost
+        component: database
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0 # Ghost는 MySQL 8을 권장
+          args: ["--default-authentication-plugin=mysql_native_password"] # 호환성 옵션
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-secret
+                  key: root-password
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-secret
+                  key: db-user
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-secret
+                  key: db-password
+            - name: MYSQL_DATABASE
+              value: "ghost_prod"
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: ghost-mysql-pvc
