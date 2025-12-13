@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghost
+  namespace: default
+  labels:
+    app: ghost
+    component: frontend
+spec:
+  replicas: 1 # 몇 개의 파드를 실행할지
+  selector:
+    matchLabels: # 이 라벨을 가진 파드를 관리
+      app: ghost
+      component: frontend
+  template: # 파드를 찍어낼 template
+    metadata:
+      labels:
+        app: ghost
+        component: frontend
+    spec:
+      # 1. 초기화 컨테이너: Ghost 실행 전 S3 어댑터를 다운로드 받아 설치함
+      initContainers:
+        - name: install-s3-adapter
+          image: node:lts
+          command:
+            - sh
+            - -c
+            - |
+              # S3 어댑터 설치 경로 생성
+              mkdir -p /content/adapters/storage/s3 && \
+              # 어댑터 다운로드 및 압축 해제 (ghost-storage-adapter-s3)
+              npm install ghost-storage-adapter-s3 --prefix /tmp && \
+              # 필요한 파일만 정확한 위치로 복사
+              cp -r /tmp/node_modules/ghost-storage-adapter-s3/* /content/adapters/storage/s3/ && \
+              ls -al /content/adapters/storage/s3
+          volumeMounts:
+            - name: adapter-storage
+              mountPath: /content/adapters/storage
+
+      # 2. 메인 컨테이너
+      containers: # 컨테이너 정의(도커)
+        - name: ghost
+          image: ghost:6.10.3 # 리눅스 기반 알파인 이미지 말고 기본 이미지 사용, https://hub.docker.com/_/ghost
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 2368 # Ghost 기본 포트
+          env:
+            # Ghost 설정 (https://ghost.org/docs/config/)
+            - name: url
+              value: "https://cms.duchi.click"
+            - name: NODE_ENV
+              value: "production"
+
+            # --- Database 설정 ---
+            - name: database__client
+              value: "mysql"
+            - name: database__connection__host
+              value: "ghost-mysql" # 나중에 만들 Service의 이름 (DNS)
+            - name: database__connection__user
+              value: "ghost"
+            - name: database__connection__password
+              valueFrom: # Secret에서 비밀번호 가져오기
+                secretKeyRef:
+                  name: ghost-db-secret
+                  key: db-password
+            - name: database__connection__database
+              value: "ghost_prod"
+
+            # --- S3 (Cloudflare R2) 설정 ---
+            # 스토리지 활성화: s3
+            - name: storage__active
+              value: "s3"
+            # S3 어댑터 설정 (환경변수 매핑)
+            - name: storage__s3__region
+              value: "auto" # R2는 region을 auto로 설정
+            - name: storage__s3__bucket
+              value: "ghost-blog" # R2 버킷 이름
+            - name: storage__s3__endpoint
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-storage-secret
+                  key: r2-endpoint # https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+            - name: storage__s3__accessKeyId
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-storage-secret
+                  key: r2-access-key
+            - name: storage__s3__secretAccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-storage-secret
+                  key: r2-secret-key
+            # 이미지 URL 도메인
+            - name: storage__s3__assetHost
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-storage-secret
+                  key: r2-asset-host
+            # 경로 스타일 강제 (R2 필수 설정)
+            - name: storage__s3__forcePathStyle
+              value: "true"
+
+          volumeMounts: # PVC를 컨테이너 내부 경로에 연결
+            - name: ghost-content
+              mountPath: /var/lib/ghost/content
+            # InitContainer가 다운로드 받은 어댑터를 여기 마운트
+            - name: adapter-storage
+              mountPath: /var/lib/ghost/content/adapters/storage
+
+          resources: # 리소스 제한
+            requests:
+              cpu: "100m" # 평소에는 CPU 거의 안 씀
+              memory: "256Mi"
+            limits:
+              cpu: "500m" # 부하 걸릴 때 최대치
+              memory: "512Mi"
+      volumes: # 파드에 달아줄 디스크 정의
+        - name: ghost-content
+          persistentVolumeClaim:
+            claimName: ghost-content-pvc
+        # 어댑터 파일 공유를 위한 빈 디스크 (파드 죽으면 삭제됨)
+        - name: adapter-storage
+          emptyDir: {}
