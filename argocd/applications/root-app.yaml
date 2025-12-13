@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/duchangkim/home-lab.git
+    targetRevision: HEAD
+    path: argocd/applications
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  # 자동 동기화 설정
+  syncPolicy:
+    automated:
+      prune: true # Git에서 파일이 삭제되면 ArgoCD에서도 앱 삭제
+      selfHeal: true # 누군가 수동으로 앱을 건드리면 Git 상태로 복구
