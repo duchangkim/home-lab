@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ghost
+  namespace: default
+  annotations:
+    # Cert-Manager를 이용해 자동으로 HTTPS 인증서 발급
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Traefik 설정 (필요시 미들웨어 추가 가능)
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - cms.duchi.click
+      secretName: ghost-tls # 인증서가 저장될 시크릿 이름 (자동 생성됨)
+  rules:
+    - host: cms.duchi.click
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ghost
+                port:
+                  number: 2368
