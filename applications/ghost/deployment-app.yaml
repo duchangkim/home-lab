@@ -116,6 +116,31 @@ spec:
             - name: storage__s3__forcePathStyle
               value: "true"
 
+            # Gmail SMTP
+            - name: mail__transport
+              value: "SMTP"
+            - name: mail__options__host
+              value: "smtp.gmail.com"
+            - name: mail__options__port
+              value: "465"
+            - name: mail__options__secure
+              value: "true"
+            - name: mail__options__auth__user
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-secret
+                  key: smtp-user
+            - name: mail__options__auth__pass
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-secret
+                  key: smtp-password
+            - name: mail__from
+              valueFrom:
+                secretKeyRef:
+                  name: ghost-secret
+                  key: mail-from
+
           volumeMounts: # PVC를 컨테이너 내부 경로에 연결
             - name: ghost-content
               mountPath: /var/lib/ghost/content
