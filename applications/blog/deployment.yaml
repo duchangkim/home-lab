@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: blog
-          image: ghcr.io/duchangkim/duchi-click:latest
-          imagePullPolicy: Always # 항상 최신 이미지 가져오기
+          image: ghcr.io/duchangkim/duchi-click@sha256:54f2b1072acecb01ea0618f6d3fb9f681a0ddb9e52d033491c6b114b26e82abc
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3011
           env:
