@@ -3,5 +3,5 @@ kind: Kustomization
 
 resources:
   - ../../base
+  - ../../base/cloudflared # Cloudflare Tunnel
   - ../../cert-manager/overlays/production # Real Let's Encrypt Issuer
-
