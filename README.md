@@ -15,10 +15,22 @@ k3s와 ArgoCD를 사용한 GitOps 기반 홈서버 관리 프로젝트입니다.
 ### 빠른 시작
 
 ```bash
-# 설치 스크립트 실행
-chmod +x setup/homelab-setup.sh
-./setup/homelab-setup.sh
+# 1) k3s 설치(우분투)
+chmod +x setup/k3s-install.sh
+./setup/k3s-install.sh
+
+# (옵션) 큰 디스크로 data-dir 설정하고 싶으면
+# ./setup/k3s-install.sh --use-big-disk
+
+# 2) 인프라/ArgoCD 부트스트랩
+chmod +x setup/bootstrap-infra.sh
+./setup/bootstrap-infra.sh --overlay production
+
+# (옵션) ArgoCD Applications(app-of-apps)까지 적용
+# ./setup/bootstrap-infra.sh --overlay production --apply-apps
 ```
+
+> 참고: 운영 환경(우분투)은 `k3s-install.sh` / `bootstrap-infra.sh`로 **설치 단계와 부트스트랩을 분리**해서 운영하는 것을 권장합니다.
 
 ### 접속 정보
 
@@ -79,9 +91,16 @@ sudo kubectl get applications -n argocd
 ├── argocd/                 # ArgoCD Application 정의
 │   └── applications/       # Git을 통한 배포 관리
 └── setup/                  # 설치 스크립트
-    ├── homelab-setup.sh    # 홈랩 자동 설치
+    ├── k3s-install.sh      # (우분투) k3s 설치 전용
+    ├── bootstrap-infra.sh  # (우분투/로컬) 인프라/ArgoCD 부트스트랩
+    ├── migrate-k3s-data.sh # (운영) k3s data-dir 마이그레이션
     └── k3d-cluster.sh      # 로컬 개발 환경
 ```
+
+## 💾 k3s 데이터 디렉토리 (선택)
+
+- **권장**: 새 서버 첫 설치 시 `setup/k3s-install.sh --use-big-disk`로 `data-dir`을 처음부터 큰 디스크로 설정
+- **이미 설치한 뒤 옮기기**: 다운타임을 감수하고 `setup/migrate-k3s-data.sh` 사용
 
 ## 🔒 Secret 관리
 
