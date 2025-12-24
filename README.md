@@ -121,7 +121,8 @@ stringData:
 EOF
 
 # 2. Sealed Secret으로 암호화
-kubeseal -f secret.yaml -w sealed-secret.yaml --format yaml
+kubeseal --cert=pub-cert.pem \
+  --format=yaml < applications/{app}/secret.yaml > applications/{app}/sealed-secret.yaml
 
 # 3. Git에 커밋 (암호화된 파일만)
 git add sealed-secret.yaml
