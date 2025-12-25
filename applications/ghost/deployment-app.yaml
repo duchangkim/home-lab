@@ -35,11 +35,12 @@ spec:
               # 타겟 디렉토리로 이동하여 직접 설치 (의존성 포함)
               cd $TARGET_DIR
               npm init -y
-              npm install ghost-storage-adapter-s3
+              # ghost-storage-adapter-s3 대신(너무 오래됨) ghos3 설치
+              npm install ghos3
 
-              # Ghost가 모듈을 바로 로드할 수 있도록 index.js를 상위로 노출
-              cp node_modules/ghost-storage-adapter-s3/index.js .
-              cp -r node_modules/ghost-storage-adapter-s3/lib . 2>/dev/null || true
+              # ghos3의 내용을 현재 디렉토리(s3 어댑터 루트)로 복사
+              # ghos3는 index.js를 포함하고 있어 바로 복사하면 됩니다.
+              cp -r node_modules/ghos3/* .
 
               # 권한 수정
               chown -R 1000:1000 /var/lib/ghost/content/adapters
