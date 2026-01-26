@@ -24,7 +24,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: n8n
-          image: docker.n8n.io/n8nio/n8n:latest
+          image: docker.n8n.io/n8nio/n8n:2.4.6 # https://hub.docker.com/r/n8nio/n8n
           ports:
             - containerPort: 5678
           env:
