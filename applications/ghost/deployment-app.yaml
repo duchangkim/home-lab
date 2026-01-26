@@ -54,7 +54,7 @@ spec:
       # 2. 메인 컨테이너
       containers: # 컨테이너 정의(도커)
         - name: ghost
-          image: ghost:6.10.3 # 리눅스 기반 알파인 이미지 말고 기본 이미지 사용, https://hub.docker.com/_/ghost
+          image: ghost:6.14.0 # 리눅스 기반 알파인 이미지 말고 기본 이미지 사용, https://hub.docker.com/_/ghost
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 2368 # Ghost 기본 포트
