@@ -52,6 +52,4 @@ echo "다음 명령어로 로컬 인프라(ArgoCD, Mock Certs 등)를 설치하�
 echo "sudo kubectl apply -k infrastructure/overlays/local/"
 echo ""
 echo "그 후 애플리케이션 등록 (infrastructure 제외):"
-echo "sudo kubectl apply -f argocd/applications/blog.yaml"
-echo "sudo kubectl apply -f argocd/applications/openwebui.yaml"
-echo "sudo kubectl apply -f argocd/applications/test-app.yaml"
+echo "sudo kubectl apply -f argocd/applications/root-app.yaml"

@@ -4,7 +4,6 @@ k3s와 ArgoCD를 사용한 GitOps 기반 홈서버 관리 프로젝트입니다.
 
 ## 🏠 홈랩 서비스
 
-- **Blog**: 개인 블로그 (https://duchi.click) - 루트 도메인
 - **OpenWebUI**: AI 챗봇 인터페이스 (https://ai.duchi.click)
 - **ArgoCD**: GitOps CD 플랫폼 (https://argocd.duchi.click)
 - **Traefik**: Ingress Controller (http://traefik.duchi.click)
@@ -34,7 +33,6 @@ chmod +x setup/bootstrap-infra.sh
 
 ### 접속 정보
 
-- **Blog**: https://duchi.click
 - **ArgoCD**: https://argocd.duchi.click
 - **OpenWebUI**: https://ai.duchi.click
 - **Traefik Dashboard**: http://traefik.duchi.click
@@ -59,7 +57,6 @@ echo "127.0.0.1 argocd.local ai.local traefik.local" | sudo tee -a /etc/hosts
 
 # 5. 애플리케이션 배포 (infrastructure 제외)
 # 주의: infrastructure 앱은 로컬 설정을 덮어쓸 수 있으므로 배포하지 않습니다.
-sudo kubectl apply -f argocd/applications/blog.yaml
 sudo kubectl apply -f argocd/applications/openwebui.yaml
 sudo kubectl apply -f argocd/applications/test-app.yaml
 
@@ -85,7 +82,6 @@ sudo kubectl get applications -n argocd
 │   └── traefik/             # Ingress Controller 대시보드
 ├── applications/            # 애플리케이션 매니페스트
 │   ├── openwebui/          # AI 챗봇 UI
-│   ├── blog/               # 개인 블로그 (ghcr.io/duchangkim/duchi-click)
 │   ├── test-app/           # 테스트 앱 (whoami)
 │   └── nextcloud/          # (예정)
 ├── argocd/                 # ArgoCD Application 정의
