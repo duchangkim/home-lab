@@ -19,6 +19,7 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
     # 초기 sync를 위한 설정 추가
     retry:
       limit: 5
