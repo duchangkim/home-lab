@@ -114,8 +114,12 @@ kubectl apply -k "${OVERLAY_PATH}"
 echo ""
 
 echo "⏳ 컨트롤러 준비 대기..."
-kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout="${TIMEOUT_SECONDS}s" || true
-kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout="${TIMEOUT_SECONDS}s" || true
+if ! kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout="${TIMEOUT_SECONDS}s" 2>/dev/null; then
+  echo "⚠️  cert-manager가 아직 준비되지 않았습니다. 수동 확인 필요: kubectl get pods -n cert-manager"
+fi
+if ! kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout="${TIMEOUT_SECONDS}s" 2>/dev/null; then
+  echo "⚠️  ArgoCD 서버가 아직 준비되지 않았습니다. 수동 확인 필요: kubectl get pods -n argocd"
+fi
 echo ""
 
 echo "🔐 ArgoCD 관리자 비밀번호 (admin):"
