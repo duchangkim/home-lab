@@ -21,7 +21,7 @@ spec:
       # 1. 초기화 컨테이너: Ghost 실행 전 S3 어댑터를 다운로드 받아 설치함
       initContainers:
         - name: install-s3-adapter
-          image: node:lts
+          image: node:22-bookworm
           command:
             - sh
             - -c
@@ -54,7 +54,7 @@ spec:
       # 2. 메인 컨테이너
       containers: # 컨테이너 정의(도커)
         - name: ghost
-          image: ghost:6.14.0 # 리눅스 기반 알파인 이미지 말고 기본 이미지 사용, https://hub.docker.com/_/ghost
+          image: ghost:6.16.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 2368 # Ghost 기본 포트

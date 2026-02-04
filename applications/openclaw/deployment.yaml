@@ -33,7 +33,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: openclaw
-          image: ghcr.io/openclaw/openclaw:latest
+          image: ghcr.io/openclaw/openclaw:v2026.2.2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 18789
