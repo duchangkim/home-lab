@@ -75,21 +75,22 @@ spec:
                   name: n8n-secret
                   key: db-password
 
-          # 헬스 체크
           livenessProbe:
             httpGet:
               path: /healthz
               port: 5678
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 60
+            periodSeconds: 30
             failureThreshold: 5
+            timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /healthz
               port: 5678
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 30
+            periodSeconds: 15
             failureThreshold: 5
+            timeoutSeconds: 10
 
           volumeMounts:
             - name: data
