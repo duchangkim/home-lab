@@ -149,13 +149,13 @@ spec:
             - name: adapter-storage
               mountPath: /var/lib/ghost/content/adapters/storage
 
-          resources: # 리소스 제한
+          resources:
             requests:
-              cpu: "100m" # 평소에는 CPU 거의 안 씀
-              memory: "256Mi"
+              cpu: "50m"
+              memory: "192Mi"
             limits:
-              cpu: "500m" # 부하 걸릴 때 최대치
-              memory: "512Mi"
+              cpu: "300m"
+              memory: "384Mi"
       volumes: # 파드에 달아줄 디스크 정의
         - name: ghost-content
           persistentVolumeClaim:
