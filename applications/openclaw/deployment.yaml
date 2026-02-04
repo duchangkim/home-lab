@@ -34,7 +34,7 @@ spec:
       initContainers:
         - name: init-config
           image: busybox:1.36
-          command: ['sh', '-c', 'cp /config-source/openclaw.json /home/node/.openclaw/openclaw.json && chmod 644 /home/node/.openclaw/openclaw.json']
+          command: ['sh', '-c', 'rm -f /home/node/.openclaw/config.json && cp /config-source/openclaw.json /home/node/.openclaw/config.json && chmod 644 /home/node/.openclaw/config.json']
           volumeMounts:
             - name: data
               mountPath: /home/node/.openclaw
