@@ -88,18 +88,18 @@ patches:
       kind: Deployment
       name: argocd-redis
 
-  # application-controller: 애플리케이션 상태 관리
+  # application-controller: 애플리케이션 상태 관리 (OOM 방지를 위해 메모리 증가)
   - patch: |-
       - op: add
         path: /spec/template/spec/containers/0/resources
         value:
           requests:
-            memory: "128Mi"
-            cpu: "50m"
+            memory: "256Mi"
+            cpu: "100m"
             ephemeral-storage: "100Mi"
           limits:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "768Mi"
+            cpu: "1000m"
             ephemeral-storage: "500Mi"
     target:
       kind: StatefulSet
