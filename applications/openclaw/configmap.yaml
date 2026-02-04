@@ -8,7 +8,11 @@ data:
     {
       "gateway": {
         "mode": "local",
-        "trustedProxies": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+        "trustedProxies": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"],
+        "auth": {
+          "mode": "password",
+          "allowLocal": true
+        }
       },
       "channels": {
         "discord": {
