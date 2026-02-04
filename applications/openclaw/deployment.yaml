@@ -53,13 +53,6 @@ spec:
                 secretKeyRef:
                   name: openclaw-secret
                   key: claude-oauth-token
-                  optional: true
-            - name: ANTHROPIC_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: openclaw-secret
-                  key: anthropic-api-key
-                  optional: true
             - name: DISCORD_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
