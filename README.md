@@ -2,170 +2,170 @@
 
 k3s와 ArgoCD를 사용한 GitOps 기반 홈서버 관리 프로젝트입니다.
 
-## 🏠 홈랩 서비스
+## 🏠 운영 중인 서비스
 
-- **OpenWebUI**: AI 챗봇 인터페이스 (https://ai.duchi.click)
-- **ArgoCD**: GitOps CD 플랫폼 (https://argocd.duchi.click)
-- **Traefik**: Ingress Controller (http://traefik.duchi.click)
-- To be continued...
+| 서비스 | 설명 | URL |
+|--------|------|-----|
+| **OpenWebUI** | AI 챗봇 인터페이스 | https://ai.duchi.click |
+| **Ghost CMS** | Headless CMS (콘텐츠 관리) | https://cms.duchi.click |
+| **n8n** | 워크플로우 자동화 | https://n8n.duchi.click |
+| **ArgoCD** | GitOps CD 플랫폼 | https://argocd.duchi.click |
+| **Traefik** | Ingress Controller | http://traefik.duchi.click |
 
-## 🚀 실제 홈랩 배포
+## 💻 하드웨어 스펙
 
-### 빠른 시작
+| 항목 | 스펙 |
+|------|------|
+| **CPU** | Intel N95 (4코어/4스레드) |
+| **RAM** | 8GB DDR4 |
+| **OS 디스크** | 238GB NVMe SSD |
+| **데이터 디스크** | 500GB HDD (`/mnt/ncdata`) |
+| **OS** | Ubuntu 24.04 LTS |
 
-```bash
-# 1) k3s 설치(우분투)
-chmod +x setup/k3s-install.sh
-./setup/k3s-install.sh
-
-# (옵션) 큰 디스크로 data-dir 설정하고 싶으면
-# ./setup/k3s-install.sh --use-big-disk
-
-# 2) 인프라/ArgoCD 부트스트랩
-chmod +x setup/bootstrap-infra.sh
-./setup/bootstrap-infra.sh --overlay production
-
-# (옵션) ArgoCD Applications(app-of-apps)까지 적용
-# ./setup/bootstrap-infra.sh --overlay production --apply-apps
-```
-
-> 참고: 운영 환경(우분투)은 `k3s-install.sh` / `bootstrap-infra.sh`로 **설치 단계와 부트스트랩을 분리**해서 운영하는 것을 권장합니다.
-
-### 접속 정보
-
-- **ArgoCD**: https://argocd.duchi.click
-- **OpenWebUI**: https://ai.duchi.click
-- **Traefik Dashboard**: http://traefik.duchi.click
-- **Test App**: https://whoami.duchi.click
-
-## 🧪 로컬 개발 환경 (k3d)
-
-### k3d로 로컬 테스트
-
-```bash
-# 1. 클러스터 생성
-sudo sh ./setup/k3d-cluster.sh
-
-# 2. 로컬 인프라 설치 (ArgoCD + Self-Signed Certs)
-sudo kubectl apply -k infrastructure/overlays/local/
-
-# 3. ArgoCD 비밀번호 확인
-sudo kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
-
-# 4. /etc/hosts 설정
-echo "127.0.0.1 argocd.local ai.local traefik.local" | sudo tee -a /etc/hosts
-
-# 5. 애플리케이션 배포 (infrastructure 제외)
-# 주의: infrastructure 앱은 로컬 설정을 덮어쓸 수 있으므로 배포하지 않습니다.
-sudo kubectl apply -f argocd/applications/openwebui.yaml
-sudo kubectl apply -f argocd/applications/test-app.yaml
-
-# 6. 애플리케이션 배포 상태 확인
-sudo kubectl get applications -n argocd
-```
-
-### 로컬 접속 정보
-
-- ArgoCD: http://argocd.local:8080 (admin / 위에서 확인한 비밀번호)
-- OpenWebUI: http://ai.local (HTTPS 경고 무시)
-- Traefik: http://traefik.local
-
-> ⚠️ **참고**: 로컬 환경은 **Self-Signed 인증서**를 사용하여 운영 환경과 동일한 TLS 구성을 모의(Mocking)합니다. 브라우저에서 "안전하지 않음" 경고가 뜨면 무시하고 진행하세요.
+> 리소스가 제한된 환경입니다. 애플리케이션 배포 시 적절한 리소스 제한을 설정하세요.
 
 ## 📁 프로젝트 구조
 
 ```
 ├── infrastructure/           # 기반 인프라
 │   ├── argocd/              # ArgoCD 설치 (Kustomize)
-│   ├── cert-manager/        # Let's Encrypt 인증서 발급
-│   ├── sealed-secrets/      # Secret 암호화 관리
-│   └── traefik/             # Ingress Controller 대시보드
+│   ├── argocd-image-updater/# 이미지 자동 업데이트
+│   ├── cert-manager/        # TLS 인증서 관리
+│   │   ├── base/            # cert-manager 설치
+│   │   └── overlays/        # local/production Issuer
+│   ├── base/                # 공유 인프라
+│   │   ├── sealed-secrets/  # Secret 암호화
+│   │   ├── traefik/         # Ingress 대시보드
+│   │   └── cloudflared/     # Cloudflare Tunnel
+│   └── overlays/            # 환경별 설정
+│       ├── local/           # k3d 로컬 개발
+│       └── production/      # 운영 서버
 ├── applications/            # 애플리케이션 매니페스트
 │   ├── openwebui/          # AI 챗봇 UI
-│   ├── test-app/           # 테스트 앱 (whoami)
-│   └── nextcloud/          # (예정)
+│   ├── ghost/              # Headless CMS + MySQL
+│   ├── n8n/                # 워크플로우 자동화 + PostgreSQL
+│   └── test-app/           # 테스트 앱 (whoami)
 ├── argocd/                 # ArgoCD Application 정의
-│   └── applications/       # Git을 통한 배포 관리
+│   └── applications/       # App-of-Apps 매니페스트
 └── setup/                  # 설치 스크립트
-    ├── k3s-install.sh      # (우분투) k3s 설치 전용
-    ├── bootstrap-infra.sh  # (우분투/로컬) 인프라/ArgoCD 부트스트랩
-    ├── migrate-k3s-data.sh # (운영) k3s data-dir 마이그레이션
-    └── k3d-cluster.sh      # 로컬 개발 환경
+    ├── k3s-install.sh      # k3s 설치 (Ubuntu)
+    ├── bootstrap-infra.sh  # 인프라 부트스트랩
+    └── k3d-cluster.sh      # 로컬 클러스터 생성
 ```
 
-## 💾 k3s 데이터 디렉토리 (선택)
+## 🚀 운영 환경 배포
 
-- **권장**: 새 서버 첫 설치 시 `setup/k3s-install.sh --use-big-disk`로 `data-dir`을 처음부터 큰 디스크로 설정
-- **이미 설치한 뒤 옮기기**: 다운타임을 감수하고 `setup/migrate-k3s-data.sh` 사용
+### 빠른 시작
+
+```bash
+# 1. k3s 설치 (Ubuntu)
+./setup/k3s-install.sh
+
+# 2. 인프라 부트스트랩
+./setup/bootstrap-infra.sh --overlay production
+
+# 3. ArgoCD Applications 적용 (선택)
+./setup/bootstrap-infra.sh --overlay production --apply-apps
+```
+
+### k3s 설치 옵션
+
+```bash
+# 기본 설치
+./setup/k3s-install.sh
+
+# 큰 디스크로 data-dir 설정
+./setup/k3s-install.sh --use-big-disk
+
+# 커스텀 data-dir 지정
+./setup/k3s-install.sh --data-dir /mnt/storage/k3s
+```
+
+## 🧪 로컬 개발 환경 (k3d)
+
+```bash
+# 1. 클러스터 생성
+./setup/k3d-cluster.sh
+
+# 2. 로컬 인프라 설치
+kubectl apply -k infrastructure/overlays/local/
+
+# 3. ArgoCD 비밀번호 확인
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d; echo
+
+# 4. /etc/hosts 설정
+echo "127.0.0.1 argocd.local ai.local traefik.local" | sudo tee -a /etc/hosts
+
+# 5. 애플리케이션 배포
+kubectl apply -f argocd/applications/openwebui.yaml
+kubectl apply -f argocd/applications/test-app.yaml
+```
+
+> ⚠️ 로컬 환경은 Self-Signed 인증서를 사용합니다. 브라우저 경고를 무시하세요.
 
 ## 🔒 Secret 관리
 
-이 프로젝트는 Sealed Secrets를 사용하여 민감한 정보를 안전하게 Git에 저장합니다.
+이 프로젝트는 **Sealed Secrets**를 사용하여 민감한 정보를 안전하게 Git에 저장합니다.
 
-### Secret 생성 및 암호화
+### Secret 생성 워크플로우
 
 ```bash
-# 1. 일반 Secret 파일 작성
-cat > secret.yaml <<EOF
+# 1. secret.yaml 작성 (로컬에만 보관)
+cat > applications/{app}/secret.yaml <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
   name: my-secret
   namespace: default
 stringData:
-  password: "my-password"
+  password: "실제-비밀번호"
 EOF
 
 # 2. Sealed Secret으로 암호화
 kubeseal --cert=pub-cert.pem \
-  --format=yaml < applications/{app}/secret.yaml > applications/{app}/sealed-secret.yaml
+  -f applications/{app}/secret.yaml \
+  -w applications/{app}/sealed-secret.yaml \
+  --format yaml
 
-# 3. Git에 커밋 (암호화된 파일만)
-git add sealed-secret.yaml
-git commit -m "Add sealed secret"
-
-# ⚠️ secret.yaml은 .gitignore에 추가되어 있어 커밋되지 않습니다
+# 3. 암호화된 파일만 커밋
+git add applications/{app}/sealed-secret.yaml
+git commit -m "Add sealed secret for {app}"
 ```
 
-또는 로컬에서 pub-cert.pem을 가지고 시크릿 암호화 후 저장소에 push
+> ⚠️ `secret.yaml`은 `.gitignore`에 의해 자동으로 제외됩니다. 절대 커밋하지 마세요.
 
-자세한 사용법은 [infrastructure/sealed-secrets/README.md](infrastructure/sealed-secrets/README.md)를 참조하세요.
+자세한 내용: [infrastructure/base/sealed-secrets/README.md](infrastructure/base/sealed-secrets/README.md)
 
 ## 🔄 GitOps 워크플로우
 
-1. **코드 변경**: 로컬에서 YAML 파일 수정
-2. **Git 푸시**: 변경사항을 Git 레포지토리에 푸시
-3. **자동 동기화**: ArgoCD가 변경사항을 감지하고 클러스터에 자동 배포
-4. **상태 확인**: ArgoCD UI에서 배포 상태 모니터링
-
-```bash
-# 예시: OpenWebUI 이미지 버전 업데이트
-vim applications/openwebui/deployment.yaml
-git add applications/openwebui/deployment.yaml
-git commit -m "Update OpenWebUI to latest version"
-git push
-
-# ArgoCD가 자동으로 감지하고 배포 (수 분 이내)
 ```
+코드 변경 → Git Push → ArgoCD 감지 → 자동 배포
+```
+
+1. 로컬에서 YAML 매니페스트 수정
+2. Git에 푸시
+3. ArgoCD가 변경 감지 후 자동 동기화
+4. ArgoCD UI에서 배포 상태 확인
 
 ## 🛠️ 유용한 명령어
 
 ```bash
-# 클러스터 상태 확인
+# 클러스터 상태
 kubectl get nodes
 kubectl get pods -A
 
-# ArgoCD 애플리케이션 상태
+# ArgoCD 애플리케이션
 kubectl get applications -n argocd
 
-# 인증서 확인
+# 인증서 상태
 kubectl get certificate -A
 
 # 로그 확인
 kubectl logs -n default -l app=openwebui --tail=100 -f
 
-# ArgoCD CLI 로그인 (선택사항)
-argocd login argocd.duchi.click --username admin --password <초기비밀번호>
+# Sealed Secret 컨트롤러 상태
+kubectl get pods -n kube-system | grep sealed-secrets
 ```
 
 ## 📚 참고 자료
@@ -174,3 +174,4 @@ argocd login argocd.duchi.click --username admin --password <초기비밀번호>
 - [ArgoCD 공식 문서](https://argo-cd.readthedocs.io/)
 - [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets)
 - [cert-manager](https://cert-manager.io/)
+- [Kustomize](https://kustomize.io/)
