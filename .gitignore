@@ -3,8 +3,8 @@
 **/secret.yaml
 !**/sealed-secret.yaml
 
-# Local docs (deployment plans, notes)
-docs/
+# Planning docs (internal notes, not for public)
+docs/plan/
 
 # OS files
 .DS_Store
