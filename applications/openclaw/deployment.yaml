@@ -35,14 +35,11 @@ spec:
         - name: openclaw
           image: ghcr.io/openclaw/openclaw:2026.2.2
           imagePullPolicy: IfNotPresent
+          command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
           ports:
             - containerPort: 18789
               name: gateway
           env:
-            - name: OPENCLAW_GATEWAY_BIND
-              value: "0.0.0.0"
-            - name: OPENCLAW_GATEWAY_PORT
-              value: "18789"
             - name: OPENCLAW_GATEWAY_TOKEN
               valueFrom:
                 secretKeyRef:
