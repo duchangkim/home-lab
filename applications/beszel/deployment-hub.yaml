@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beszel-hub
+  namespace: default
+  labels:
+    app: beszel
+    component: hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: beszel
+      component: hub
+  template:
+    metadata:
+      labels:
+        app: beszel
+        component: hub
+    spec:
+      containers:
+        - name: beszel-hub
+          image: henrygd/beszel:0.18.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+              name: http
+          volumeMounts:
+            - name: beszel-data
+              mountPath: /beszel_data
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "32Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+      volumes:
+        - name: beszel-data
+          persistentVolumeClaim:
+            claimName: beszel-data

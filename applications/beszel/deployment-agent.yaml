@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beszel-agent
+  namespace: default
+  labels:
+    app: beszel
+    component: agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: beszel
+      component: agent
+  template:
+    metadata:
+      labels:
+        app: beszel
+        component: agent
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: beszel-agent
+          image: henrygd/beszel-agent:0.18.3
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true  # 호스트 /proc, /sys 읽기에 필수
+          env:
+            - name: PORT
+              value: "45876"
+            - name: KEY
+              valueFrom:
+                secretKeyRef:
+                  name: beszel-secret
+                  key: ssh-public-key
+          resources:
+            requests:
+              cpu: "5m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "64Mi"
