@@ -397,6 +397,23 @@ resources:
 
 See [Hardware Specifications](#hardware-specifications) for allocation guidelines.
 
+## Troubleshooting Documentation
+
+After resolving infrastructure or deployment issues, **always document the troubleshooting process** in the `docs/` directory.
+
+**Required content:**
+- Environment context (versions, cluster state)
+- Symptom (error messages, logs)
+- Root cause analysis
+- Step-by-step solution
+- Prevention / verification commands
+
+**File location:** `docs/{topic}-troubleshooting.md`
+
+**Existing docs:**
+- `docs/openclaw-troubleshooting.md` - OpenClaw deployment issues
+- `docs/argocd-crd-sync-troubleshooting.md` - ArgoCD CRD annotation size limit
+
 ## Validation Checklist
 
 Before committing changes:
@@ -407,3 +424,4 @@ Before committing changes:
 - [ ] Resource limits specified for new deployments
 - [ ] Namespace explicitly set in metadata
 - [ ] Labels consistent with existing patterns
+- [ ] Troubleshooting documented if an issue was resolved
