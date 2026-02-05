@@ -244,6 +244,43 @@ spec:
 - Add source URLs for container images
 - Document non-obvious configurations
 
+### Mermaid Diagrams
+
+문서에 다이어그램, 차트, 플로우차트 등 시각적 자료를 포함할 때 **Mermaid 문법을 적극 활용**한다.
+
+**사용 시점:**
+- 아키텍처 구성도 (컴포넌트 간 관계)
+- 배포 플로우 / 워크플로우
+- 시퀀스 다이어그램 (서비스 간 통신)
+- 의사결정 흐름도
+- 상태 다이어그램
+
+**장점:**
+- Git diff로 변경 추적 가능 (ASCII art는 diff가 무의미)
+- GitHub / IDE에서 네이티브 렌더링 지원
+- LLM이 구조를 정확히 파싱 가능
+
+**예시:**
+
+```mermaid
+graph LR
+  A[Git Push] --> B[ArgoCD 감지]
+  B --> C[자동 동기화]
+  C --> D[K8s 배포]
+```
+
+```mermaid
+graph TD
+  subgraph k3s Node
+    Hub[Beszel Hub] <-->|SSH| Agent[Beszel Agent]
+    Hub --> PVC[(PVC Storage)]
+  end
+```
+
+**금지:**
+- ASCII art로 다이어그램 그리기 (`┌──┐`, `│`, `└──┘` 등) — 반드시 Mermaid로 대체
+- 단, 디렉토리 트리 구조(`├──`, `└──`)는 코드 블록으로 유지 (Mermaid 부적합)
+
 ### Kustomization Files
 
 ```yaml
@@ -397,23 +434,6 @@ resources:
 
 See [Hardware Specifications](#hardware-specifications) for allocation guidelines.
 
-## Troubleshooting Documentation
-
-After resolving infrastructure or deployment issues, **always document the troubleshooting process** in the `docs/` directory.
-
-**Required content:**
-- Environment context (versions, cluster state)
-- Symptom (error messages, logs)
-- Root cause analysis
-- Step-by-step solution
-- Prevention / verification commands
-
-**File location:** `docs/{topic}-troubleshooting.md`
-
-**Existing docs:**
-- `docs/openclaw-troubleshooting.md` - OpenClaw deployment issues
-- `docs/argocd-crd-sync-troubleshooting.md` - ArgoCD CRD annotation size limit
-
 ## Validation Checklist
 
 Before committing changes:
@@ -424,4 +444,3 @@ Before committing changes:
 - [ ] Resource limits specified for new deployments
 - [ ] Namespace explicitly set in metadata
 - [ ] Labels consistent with existing patterns
-- [ ] Troubleshooting documented if an issue was resolved

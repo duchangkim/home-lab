@@ -139,14 +139,14 @@ git commit -m "Add sealed secret for {app}"
 
 ## 🔄 GitOps 워크플로우
 
+```mermaid
+graph LR
+  A["코드 변경<br/>(YAML 매니페스트 수정)"] --> B["Git Push"]
+  B --> C["ArgoCD 변경 감지"]
+  C --> D["자동 동기화"]
+  D --> E["K8s 배포 완료"]
+  E --> F["ArgoCD UI에서<br/>상태 확인"]
 ```
-코드 변경 → Git Push → ArgoCD 감지 → 자동 배포
-```
-
-1. 로컬에서 YAML 매니페스트 수정
-2. Git에 푸시
-3. ArgoCD가 변경 감지 후 자동 동기화
-4. ArgoCD UI에서 배포 상태 확인
 
 ## 🛠️ 유용한 명령어
 
