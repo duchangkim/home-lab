@@ -8,4 +8,5 @@ resources:
   - deployment-hub.yaml
   - deployment-agent.yaml
   - service.yaml
+  - ingress.yaml
   - sealed-secret.yaml

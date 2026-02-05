@@ -9,6 +9,7 @@ k3s와 ArgoCD를 사용한 GitOps 기반 홈서버 관리 프로젝트입니다.
 | **OpenWebUI** | AI 챗봇 인터페이스 | https://ai.duchi.click |
 | **Ghost CMS** | Headless CMS (콘텐츠 관리) | https://cms.duchi.click |
 | **n8n** | 워크플로우 자동화 | https://n8n.duchi.click |
+| **Beszel** | 서버 모니터링 (Cloudflare Access) | https://beszel.duchi.click |
 | **ArgoCD** | GitOps CD 플랫폼 | https://argocd.duchi.click |
 | **Traefik** | Ingress Controller | http://traefik.duchi.click |
 
@@ -44,6 +45,7 @@ k3s와 ArgoCD를 사용한 GitOps 기반 홈서버 관리 프로젝트입니다.
 │   ├── openwebui/          # AI 챗봇 UI
 │   ├── ghost/              # Headless CMS + MySQL
 │   ├── n8n/                # 워크플로우 자동화 + PostgreSQL
+│   ├── beszel/             # 서버 모니터링 (Hub + Agent)
 │   └── test-app/           # 테스트 앱 (whoami)
 ├── argocd/                 # ArgoCD Application 정의
 │   └── applications/       # App-of-Apps 매니페스트
