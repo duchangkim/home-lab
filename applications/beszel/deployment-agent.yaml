@@ -20,6 +20,7 @@ spec:
     spec:
       hostNetwork: true
       hostPID: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: beszel-agent
           image: henrygd/beszel-agent:0.18.3
@@ -34,6 +35,13 @@ spec:
                 secretKeyRef:
                   name: beszel-secret
                   key: ssh-public-key
+            - name: HUB_URL
+              value: "http://beszel-hub:8090"
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: beszel-secret
+                  key: token
           resources:
             requests:
               cpu: "5m"
