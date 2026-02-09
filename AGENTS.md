@@ -75,21 +75,93 @@ This is a homelab environment. Configure resource limits appropriately.
 - CPU: 4000m total, ~3500m allocatable
 - Memory: 32Gi total, ~29Gi allocatable
 
-**Per-application recommendations:**
+**Current workload allocation (2025-02-09 기준):**
+
+| Workload | CPU Req/Limit | Memory Req/Limit | Notes |
+|----------|---------------|------------------|-------|
+| OpenWebUI | 100m / 2000m | 256Mi / 2Gi | AI 챗 UI, 스파이크 대비 limit 높음 |
+| OpenClaw | 100m / 1500m | 256Mi / 2Gi | Claude Code 게이트웨이 |
+| n8n | 100m / 500m | 256Mi / 1Gi | 워크플로우 자동화 |
+| n8n-postgres | 50m / 500m | 128Mi / 1Gi | DB 캐시 활용 |
+| Ghost | 50m / 300m | 192Mi / 512Mi | Headless CMS |
+| Ghost MySQL | 100m / 500m | 256Mi / 1Gi | InnoDB buffer pool 여유 |
+| Beszel Hub | 10m / 100m | 32Mi / 128Mi | 모니터링 |
+| Beszel Agent | 5m / 50m | 16Mi / 64Mi | 호스트 메트릭 수집 |
+| **합계** | **515m / 5450m** | **1392Mi / ~7.7Gi** | |
+
+**Memory budget:**
+
+| Category | Amount |
+|----------|--------|
+| Total allocatable | ~29Gi |
+| System + k3s headroom | -3Gi |
+| Infrastructure (ArgoCD, cert-manager, etc.) | ~2Gi |
+| App workloads (limits 합계) | ~7.7Gi |
+| **Available for new apps** | **~16Gi** |
+
+**Per-application tier guidelines (신규 앱 배포 시 참고):**
 
 | App Type | CPU Request | CPU Limit | Memory Request | Memory Limit |
 |----------|-------------|-----------|----------------|--------------|
-| Lightweight (test-app) | 10m | 100m | 32Mi | 128Mi |
-| Standard (Ghost, n8n) | 100m | 500m | 256Mi | 512Mi |
-| Heavy (OpenWebUI) | 500m | 2000m | 1Gi | 2Gi |
-| Database (MySQL, PostgreSQL) | 100m | 500m | 256Mi | 512Mi |
+| Lightweight (whoami, static) | 10m | 100m | 32Mi | 128Mi |
+| Standard (Ghost, n8n) | 50-100m | 300-500m | 192-256Mi | 512Mi-1Gi |
+| Heavy (OpenWebUI, OpenClaw) | 100m | 1500-2000m | 256Mi | 2Gi |
+| Database (MySQL, PostgreSQL) | 50-100m | 500m | 128-256Mi | 1Gi |
 | Infrastructure (ArgoCD, etc.) | 50m | 200m | 128Mi | 256Mi |
 
 **Important constraints:**
 - Always set both `requests` and `limits`
 - Leave ~3Gi memory headroom for system + k3s
-- Avoid CPU limits > 1000m for non-critical apps
+- Avoid CPU limits > 2000m for non-critical apps
 - Single replica only (`replicas: 1`) - no HA capacity
+
+### Adding a New Application — Resource Allocation Process
+
+신규 애플리케이션 배포 시, 반드시 아래 프로세스를 따라 리소스를 할당한다.
+
+**Step 1: 현재 클러스터 상태 파악**
+
+```bash
+# 노드 전체 리소스 사용량
+kubectl top nodes
+
+# 모든 Pod 리소스 사용량
+kubectl top pods -A
+
+# 현재 requests/limits 총합 확인
+kubectl describe node | grep -A 5 "Allocated resources"
+```
+
+**Step 2: 앱 특성 분류**
+
+아래 기준으로 앱을 분류하고, 위 tier guidelines 테이블을 참고하여 초기값을 설정한다.
+
+| 분류 기준 | Lightweight | Standard | Heavy |
+|-----------|------------|----------|-------|
+| 트래픽 패턴 | 거의 없음 | 간헐적 | 상시/버스트 |
+| 메모리 특성 | 정적 | 점진적 증가 | 큰 변동폭 |
+| CPU 특성 | idle 상태 | 이벤트 기반 | 연산 집약 |
+| 예시 | whoami, static site | CMS, 자동화 | AI UI, API gateway |
+
+**Step 3: 예산 검증**
+
+새 앱의 memory limit을 현재 "Available for new apps" 예산과 대조한다. 예산 초과 시 기존 워크로드의 limit을 재조정하거나 배포를 보류한다.
+
+```
+Available budget >= New app memory limit  →  배포 가능
+Available budget <  New app memory limit  →  기존 앱 재조정 또는 보류
+```
+
+**Step 4: 배포 후 모니터링**
+
+배포 후 최소 24시간 동안 실제 사용량을 관찰하고, request/limit을 실측 기반으로 조정한다.
+
+```bash
+# 특정 앱의 리소스 사용량 추적
+kubectl top pods -l app=<app-name> --containers
+```
+
+> **원칙**: request는 실사용량의 1.2~1.5배, limit은 실사용량의 3~5배를 기준으로 설정한다. 단, DB 워크로드는 캐시 효과를 고려하여 limit을 넉넉히 잡는다.
 
 ## Project Structure
 
@@ -419,7 +491,7 @@ initContainers:
 
 ### Resource Limits
 
-**REQUIRED** - This homelab has limited resources (Intel N95 / 8GB RAM). Always specify limits:
+**REQUIRED** - Always specify resource limits for all containers:
 
 ```yaml
 resources:

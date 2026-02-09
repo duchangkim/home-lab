@@ -71,11 +71,11 @@ spec:
               mountPath: /home/node/.openclaw
           resources:
             requests:
-              cpu: "300m"
-              memory: "768Mi"
+              cpu: "100m"
+              memory: "256Mi"
             limits:
               cpu: "1500m"
-              memory: "1536Mi"
+              memory: "2Gi"
           livenessProbe:
             httpGet:
               path: /health

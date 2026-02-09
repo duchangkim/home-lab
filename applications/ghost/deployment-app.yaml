@@ -155,7 +155,7 @@ spec:
               memory: "192Mi"
             limits:
               cpu: "300m"
-              memory: "384Mi"
+              memory: "512Mi"
       volumes: # 파드에 달아줄 디스크 정의
         - name: ghost-content
           persistentVolumeClaim:
