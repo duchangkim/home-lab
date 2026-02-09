@@ -4,14 +4,10 @@ metadata:
   name: openclaw-config
   namespace: default
 data:
-  # NOTE: Traefik Pod IP (10.42.0.20) is listed first to work around OpenClaw CIDR parsing bug.
-  # If Traefik pod restarts with new IP, update this value.
-  # Run: kubectl get pod -n kube-system -l app.kubernetes.io/name=traefik -o wide
   openclaw.json: |
     {
       "gateway": {
         "mode": "local",
-        "trustedProxies": ["10.42.0.20", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"],
         "controlUi": {
           "allowInsecureAuth": true
         }

@@ -5,6 +5,7 @@ namespace: default
 
 resources:
   - configmap.yaml
+  - middleware.yaml
   - deployment.yaml
   - service.yaml
   - ingress.yaml

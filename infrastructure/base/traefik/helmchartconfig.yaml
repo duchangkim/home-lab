@@ -17,12 +17,20 @@ spec:
       web:
         redirectTo:
           port: websecure
+        forwardedHeaders:
+          trustedIPs:
+            - 10.42.0.0/24    # k3s pod CIDR
+            - 127.0.0.1/32
       websecure:
         tls:
           enabled: true
+        forwardedHeaders:
+          trustedIPs:
+            - 10.42.0.0/24    # k3s pod CIDR
+            - 127.0.0.1/32
       traefik:
         expose:
-          default: false  # 이 부분이 문제였을 수 있음
+          default: false
 
     service:
       enabled: true
