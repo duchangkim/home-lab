@@ -59,22 +59,21 @@ GitOps-based Kubernetes homelab infrastructure using k3s and ArgoCD. This is **i
 
 ## Hardware Specifications
 
-This is a **resource-constrained homelab** environment. Configure resource limits conservatively.
+This is a homelab environment. Configure resource limits appropriately.
 
 | Resource | Spec | Notes |
 |----------|------|-------|
 | **CPU** | Intel N95 (4 cores, 4 threads) | Low-power efficiency CPU, no hyperthreading |
-| **RAM** | 8GB DDR4 | ~3GB available for workloads |
+| **RAM** | 32GB DDR4 (Samsung, single slot) | ~29GB available for workloads |
 | **OS Disk** | 238GB NVMe SSD | 100GB LVM for root filesystem |
 | **Data Disk** | 500GB HDD | Mounted at `/mnt/ncdata` for k3s data |
-| **OS** | Ubuntu 24.04 LTS | Kernel 6.8.x |
+| **OS** | Ubuntu 24.04.3 LTS | Kernel 6.8.x |
 
 ### Resource Allocation Guidelines
 
 **Total cluster budget** (approximate):
 - CPU: 4000m total, ~3500m allocatable
-- Memory: 8Gi total, ~7Gi allocatable
-- Current usage: ~160m CPU (4%), ~4.7Gi memory (60%)
+- Memory: 32Gi total, ~29Gi allocatable
 
 **Per-application recommendations:**
 
@@ -88,7 +87,7 @@ This is a **resource-constrained homelab** environment. Configure resource limit
 
 **Important constraints:**
 - Always set both `requests` and `limits`
-- Leave ~1.5Gi memory headroom for system + k3s
+- Leave ~3Gi memory headroom for system + k3s
 - Avoid CPU limits > 1000m for non-critical apps
 - Single replica only (`replicas: 1`) - no HA capacity
 

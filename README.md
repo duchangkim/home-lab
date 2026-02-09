@@ -18,10 +18,10 @@ k3s와 ArgoCD를 사용한 GitOps 기반 홈서버 관리 프로젝트입니다.
 | 항목 | 스펙 |
 |------|------|
 | **CPU** | Intel N95 (4코어/4스레드) |
-| **RAM** | 8GB DDR4 |
+| **RAM** | 32GB DDR4 (Samsung) |
 | **OS 디스크** | 238GB NVMe SSD |
 | **데이터 디스크** | 500GB HDD (`/mnt/ncdata`) |
-| **OS** | Ubuntu 24.04 LTS |
+| **OS** | Ubuntu 24.04.3 LTS |
 
 > 리소스가 제한된 환경입니다. 애플리케이션 배포 시 적절한 리소스 제한을 설정하세요.
 
