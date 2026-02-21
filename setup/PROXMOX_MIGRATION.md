@@ -158,10 +158,15 @@ diskutil eject /dev/disk4
 
 1. BIOS 진입 (보통 `DEL` 또는 `F2`)
 2. 확인/설정:
-   - **VT-x (Intel Virtualization Technology):** Enabled
-   - **VT-d (Directed I/O):** Enabled (IOMMU, PCI passthrough 용)
+   - **VT-x (Intel Virtualization Technology):** Enabled (VM 실행에 필수)
+   - **VT-d (Directed I/O):** 있으면 Enabled (PCI passthrough 용, 지금 필수는 아님)
    - **Boot Order:** USB를 첫 번째로
+   - **PL1 (CPU Power Limit 1):** N95 기준 6000~10000 권장 (기본값이 과도하게 높을 수 있음)
 3. 저장 후 재부팅
+
+> **참고:** VT-d 설정을 BIOS에서 찾을 수 없는 경우가 있습니다.
+> VT-d는 PCI passthrough(물리 장치를 VM에 직접 할당)에만 필요하며,
+> 일반적인 VM 운영에는 VT-x만 활성화되면 충분합니다. 나중에 필요 시 활성화하세요.
 
 ### 2-3. Proxmox 설치
 
@@ -208,25 +213,34 @@ https://192.168.0.100:8006
 
 **SSH로 접속하여 repo 설정:**
 
-```bash
-# Mac 터미널에서
-ssh root@192.168.0.100
-```
+> SSH 키가 등록되어 있지 않으면 Proxmox Web UI → 노드 → Shell 을 사용하세요.
+> Mac SSH 공개키 등록: `cat ~/.ssh/id_ed25519.pub` (또는 `id_rsa.pub`) 내용을 Proxmox의
+> `~/.ssh/authorized_keys`에 추가하면 `ssh root@192.168.0.100`으로 접속 가능합니다.
 
 ```bash
-# Proxmox 호스트에서 실행
+# Proxmox 호스트에서 실행 (Web UI Shell 또는 콘솔)
 
 # 1) Enterprise repo 비활성화 (구독 없으므로)
-sed -i 's/^deb/# deb/' /etc/apt/sources.list.d/pve-enterprise.list
+#    최신 Proxmox는 .sources (DEB822) 형식을 사용합니다.
+#    .list 형식인 경우와 .sources 형식인 경우를 모두 처리합니다.
+if [ -f /etc/apt/sources.list.d/pve-enterprise.sources ]; then
+  mv /etc/apt/sources.list.d/pve-enterprise.sources /etc/apt/sources.list.d/pve-enterprise.sources.disabled
+elif [ -f /etc/apt/sources.list.d/pve-enterprise.list ]; then
+  sed -i 's/^deb/# deb/' /etc/apt/sources.list.d/pve-enterprise.list
+fi
 
-# 2) ceph enterprise repo도 비활성화 (있는 경우)
-if [ -f /etc/apt/sources.list.d/ceph.list ]; then
+# 2) Ceph enterprise repo도 비활성화
+if [ -f /etc/apt/sources.list.d/ceph.sources ]; then
+  mv /etc/apt/sources.list.d/ceph.sources /etc/apt/sources.list.d/ceph.sources.disabled
+elif [ -f /etc/apt/sources.list.d/ceph.list ]; then
   sed -i 's/^deb/# deb/' /etc/apt/sources.list.d/ceph.list
 fi
 
-# 3) No-Subscription repo 추가
-echo "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \
-  > /etc/apt/sources.list.d/pve-no-subscription.list
+# 3) No-Subscription repo 추가 (이미 존재하면 생략)
+if [ ! -f /etc/apt/sources.list.d/pve-no-subscription.list ]; then
+  echo "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \
+    > /etc/apt/sources.list.d/pve-no-subscription.list
+fi
 
 # 4) 패키지 업데이트
 apt update && apt dist-upgrade -y
@@ -479,61 +493,77 @@ kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=sealed-secrets 
 
 새 클러스터의 Sealed Secrets 컨트롤러가 새 키쌍을 생성했습니다. 모든 sealed-secret을 재암호화해야 합니다.
 
+> **원칙:** 평문 secret.yaml은 VM에 전송하지 않습니다.
+> VM에서 pub-cert.pem(공개키)만 가져와서 **로컬 Mac에서 kubeseal로 암호화**합니다.
+
+**Mac에서 kubeseal 설치 (아직 없다면):**
+
 ```bash
-# 1) kubeseal CLI 설치 (아직 없다면)
-# https://github.com/bitnami-labs/sealed-secrets/releases
-KUBESEAL_VERSION=0.24.0
-wget "https://github.com/bitnami-labs/sealed-secrets/releases/download/v${KUBESEAL_VERSION}/kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz"
-tar xzf "kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz"
-sudo mv kubeseal /usr/local/bin/
-rm -f "kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz"
+brew install kubeseal
+```
 
-# 2) 새 인증서 추출
-kubeseal --fetch-cert > pub-cert.pem
+**VM에서 새 인증서 추출 → 로컬로 가져오기:**
 
-# 3) 평문 secret.yaml 파일들을 VM으로 복사 (Mac에서)
-#    (별도 터미널에서 실행)
-#    scp applications/openwebui/secret.yaml homelab:~/workspace/home-lab/applications/openwebui/
-#    scp applications/ghost/secret.yaml homelab:~/workspace/home-lab/applications/ghost/
-#    scp applications/n8n/secret.yaml homelab:~/workspace/home-lab/applications/n8n/
-#    scp applications/beszel/secret.yaml homelab:~/workspace/home-lab/applications/beszel/
-#    scp applications/openclaw/secret.yaml homelab:~/workspace/home-lab/applications/openclaw/
-#    scp infrastructure/base/cloudflared/secret.yaml homelab:~/workspace/home-lab/infrastructure/base/cloudflared/
+```bash
+# Mac 터미널에서
+ssh homelab "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubeseal --fetch-cert \
+  --controller-name=sealed-secrets-controller \
+  --controller-namespace=kube-system" > ~/workspace/homelab/pub-cert.pem
+```
 
-# 4) 재암호화
-cd ~/workspace/home-lab
+> VM에 kubeseal이 없으면 먼저 설치:
+> `ssh homelab` 후 VM에서:
+> ```
+> KUBESEAL_VERSION=0.24.0
+> wget -q "https://github.com/bitnami-labs/sealed-secrets/releases/download/v${KUBESEAL_VERSION}/kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz"
+> tar xzf "kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz"
+> sudo mv kubeseal /usr/local/bin/ && rm -f "kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz"
+> ```
 
+**로컬 Mac에서 재암호화:**
+
+```bash
+cd ~/workspace/homelab
+
+# 6개 앱 시크릿 재암호화
 for app in openwebui ghost n8n beszel openclaw; do
-  echo "Sealing applications/${app}..."
+  echo "Sealing $app..."
   kubeseal --cert=pub-cert.pem \
     -f "applications/${app}/secret.yaml" \
     -w "applications/${app}/sealed-secret.yaml" \
     --format yaml
 done
 
-echo "Sealing infrastructure/base/cloudflared..."
+# cloudflared 시크릿 재암호화
+echo "Sealing cloudflared..."
 kubeseal --cert=pub-cert.pem \
   -f infrastructure/base/cloudflared/secret.yaml \
   -w infrastructure/base/cloudflared/sealed-secret.yaml \
   --format yaml
 
-# 5) Git commit & push
-git add pub-cert.pem
-git add applications/*/sealed-secret.yaml
-git add infrastructure/base/cloudflared/sealed-secret.yaml
-git commit -m "re-encrypt sealed secrets for new Proxmox cluster"
+# Git commit & push
+git add pub-cert.pem applications/*/sealed-secret.yaml \
+  infrastructure/base/cloudflared/sealed-secret.yaml
+git commit -m "ops: re-encrypt sealed secrets for new cluster"
 git push
 ```
 
-ArgoCD가 자동으로 변경을 감지하고 동기화합니다. 모든 앱이 Synced 상태가 될 때까지 대기:
+**ArgoCD 동기화 확인 (VM에서):**
 
 ```bash
-# ArgoCD 동기화 상태 확인 (반복)
+# ArgoCD가 새 커밋을 감지하지 못하면 강제 새로고침
+for app in openwebui ghost n8n beszel openclaw infrastructure; do
+  kubectl patch application $app -n argocd --type merge \
+    -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
+done
+
+# 동기화 상태 확인
 kubectl get applications -n argocd
-```
 
-모든 Pod가 Running이 될 때까지 대기:
-```bash
+# Secret이 정상 생성되었는지 확인
+kubectl get secrets -n default | grep -E "ghost-secret|n8n-secret|openwebui-secret|openclaw-secret|beszel-secret"
+
+# 모든 Pod가 Running이 될 때까지 대기
 kubectl get pods -n default -w
 ```
 
