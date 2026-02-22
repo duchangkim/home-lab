@@ -31,12 +31,11 @@ graph LR
 
 - [ ] 모니터 + 키보드 + USB (Proxmox 설치 미디어용) 준비
 - [ ] Mac에서 `ssh homelab` 접속 가능 확인
-- [ ] 6개 sealed-secret 원본 (평문 `secret.yaml`) 로컬에 있는지 확인
+- [ ] 5개 sealed-secret 원본 (평문 `secret.yaml`) 로컬에 있는지 확인
   - `applications/openwebui/secret.yaml`
   - `applications/ghost/secret.yaml`
   - `applications/n8n/secret.yaml`
   - `applications/beszel/secret.yaml`
-  - `applications/openclaw/secret.yaml`
   - `infrastructure/base/cloudflared/secret.yaml`
 - [ ] Git 작업 브랜치에 미커밋 변경 사항 없는지 확인
 
@@ -525,8 +524,8 @@ ssh homelab "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubeseal --fetch-cert \
 ```bash
 cd ~/workspace/homelab
 
-# 6개 앱 시크릿 재암호화
-for app in openwebui ghost n8n beszel openclaw; do
+# 5개 앱 시크릿 재암호화
+for app in openwebui ghost n8n beszel; do
   echo "Sealing $app..."
   kubeseal --cert=pub-cert.pem \
     -f "applications/${app}/secret.yaml" \
@@ -552,7 +551,7 @@ git push
 
 ```bash
 # ArgoCD가 새 커밋을 감지하지 못하면 강제 새로고침
-for app in openwebui ghost n8n beszel openclaw infrastructure; do
+for app in openwebui ghost n8n beszel infrastructure; do
   kubectl patch application $app -n argocd --type merge \
     -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
 done
@@ -561,7 +560,7 @@ done
 kubectl get applications -n argocd
 
 # Secret이 정상 생성되었는지 확인
-kubectl get secrets -n default | grep -E "ghost-secret|n8n-secret|openwebui-secret|openclaw-secret|beszel-secret"
+kubectl get secrets -n default | grep -E "ghost-secret|n8n-secret|openwebui-secret|beszel-secret"
 
 # 모든 Pod가 Running이 될 때까지 대기
 kubectl get pods -n default -w

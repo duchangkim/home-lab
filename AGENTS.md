@@ -80,14 +80,13 @@ This is a homelab environment. Configure resource limits appropriately.
 | Workload | CPU Req/Limit | Memory Req/Limit | Notes |
 |----------|---------------|------------------|-------|
 | OpenWebUI | 100m / 2000m | 256Mi / 2Gi | AI 챗 UI, 스파이크 대비 limit 높음 |
-| OpenClaw | 100m / 1500m | 256Mi / 2Gi | Claude Code 게이트웨이 |
 | n8n | 100m / 500m | 256Mi / 1Gi | 워크플로우 자동화 |
 | n8n-postgres | 50m / 500m | 128Mi / 1Gi | DB 캐시 활용 |
 | Ghost | 50m / 300m | 192Mi / 512Mi | Headless CMS |
 | Ghost MySQL | 100m / 500m | 256Mi / 1Gi | InnoDB buffer pool 여유 |
 | Beszel Hub | 10m / 100m | 32Mi / 128Mi | 모니터링 |
 | Beszel Agent | 5m / 50m | 16Mi / 64Mi | 호스트 메트릭 수집 |
-| **합계** | **515m / 5450m** | **1392Mi / ~7.7Gi** | |
+| **합계** | **415m / 3950m** | **1136Mi / ~5.7Gi** | |
 
 **Memory budget:**
 
@@ -96,8 +95,8 @@ This is a homelab environment. Configure resource limits appropriately.
 | Total allocatable | ~29Gi |
 | System + k3s headroom | -3Gi |
 | Infrastructure (ArgoCD, cert-manager, etc.) | ~2Gi |
-| App workloads (limits 합계) | ~7.7Gi |
-| **Available for new apps** | **~16Gi** |
+| App workloads (limits 합계) | ~5.7Gi |
+| **Available for new apps** | **~18Gi** |
 
 **Per-application tier guidelines (신규 앱 배포 시 참고):**
 
@@ -105,7 +104,7 @@ This is a homelab environment. Configure resource limits appropriately.
 |----------|-------------|-----------|----------------|--------------|
 | Lightweight (whoami, static) | 10m | 100m | 32Mi | 128Mi |
 | Standard (Ghost, n8n) | 50-100m | 300-500m | 192-256Mi | 512Mi-1Gi |
-| Heavy (OpenWebUI, OpenClaw) | 100m | 1500-2000m | 256Mi | 2Gi |
+| Heavy (OpenWebUI) | 100m | 1500-2000m | 256Mi | 2Gi |
 | Database (MySQL, PostgreSQL) | 50-100m | 500m | 128-256Mi | 1Gi |
 | Infrastructure (ArgoCD, etc.) | 50m | 200m | 128Mi | 256Mi |
 

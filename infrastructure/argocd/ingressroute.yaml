@@ -15,8 +15,7 @@ spec:
           port: 80
       middlewares:
         - name: argocd-headers
-  tls:
-    secretName: argocd-server-tls
+  tls: {}
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware

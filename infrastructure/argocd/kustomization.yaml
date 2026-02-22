@@ -9,7 +9,6 @@ resources:
   # 커스텀 리소스
   - namespace.yaml
   - ingressroute.yaml
-  - certificate.yaml # 이제 로컬에서도 안전함 (Mock Issuer 덕분에)
 
 # ConfigMap을 생성하거나 merge
 configMapGenerator:
