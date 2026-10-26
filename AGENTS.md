@@ -17,22 +17,23 @@
 | 항목        | 설정값                                                            |
 | ----------- | ----------------------------------------------------------------- |
 | **CPU**     | 4 cores (Sockets: 1, Cores: 4, Type: host)                        |
-| **RAM**     | 28672 MiB (28GB), Ballooning 활성 (Min: 4096)                     |
+| **RAM**     | 20480 MiB (20GB), Ballooning 활성 (Min: 4096)                     |
 | **Disk**    | 100GB, local-lvm (NVMe), VirtIO SCSI, SSD emulation, Discard 활성 |
 | **Network** | VirtIO paravirtualized, Bridge: vmbr0                             |
-| **OS**      | Ubuntu 24.04.3 LTS (Kernel 6.8.x)                                 |
-| **Machine** | q35, SeaBIOS, Qemu Agent 활성                                     |
+| **OS**      | Ubuntu 24.04.4 LTS (Kernel 6.8.x)                                 |
+| **Machine** | q35, SeaBIOS, Qemu Agent 활성, 부팅 시 자동 시작 (order=1)        |
 | **용도**    | k3s 클러스터 (ArgoCD, OpenWebUI, Ghost, n8n, Beszel 등)           |
 
-### VM 101: zeroclaw (계획됨, 미배포)
+### VM 101: Hermes (삭제 예정)
 
-| 항목     | 설정값                                               |
-| -------- | ---------------------------------------------------- |
-| **CPU**  | 2 cores                                              |
-| **RAM**  | 8GB                                                  |
-| **Disk** | 20GB NVMe                                            |
-| **OS**   | Debian 13 Desktop (Trixie, XFCE)                     |
-| **용도** | ZeroClaw AI 에이전트 (systemd daemon + Discord 연동) |
+| 항목        | 설정값                                                  |
+| ----------- | ------------------------------------------------------- |
+| **CPU**     | 2 cores (Type: host)                                    |
+| **RAM**     | 4096 MiB (4GB), Ballooning 활성 (Min: 512)              |
+| **Disk**    | 32GB, local-lvm (NVMe), VirtIO Block                    |
+| **Network** | VirtIO paravirtualized, Bridge: vmbr0, Firewall 활성    |
+| **OS**      | Ubuntu 26.04 Server                                     |
+| **Machine** | q35, OVMF (UEFI), Qemu Agent 활성, 부팅 시 자동 시작    |
 
 ## Secret 보호 규칙
 
