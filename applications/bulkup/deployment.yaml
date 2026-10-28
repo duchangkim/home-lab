@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bulkup
+  namespace: default
+  labels:
+    app: bulkup
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # RWO PVC — 두 파드가 동시에 쓰지 않게
+  selector:
+    matchLabels:
+      app: bulkup
+  template:
+    metadata:
+      labels:
+        app: bulkup
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bulkup
+          image: python:3.13.18-alpine3.24@sha256:bbc0290146ebe0a8b9a8ed07d3f2c7bdeb4d917fc93300a4e47490c8b5a11b48
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-u", "/app/server.py"]
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: DATA_DIR
+              value: /data
+            - name: PORT
+              value: "8080"
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            # Cloudflare Access 앱 식별자(비밀 아님 — 로그인 리다이렉트 URL에 노출되는 값).
+            # 앱은 Traefik 경유 요청마다 Cf-Access-Jwt-Assertion 서명·aud·iss·exp를 검증하고, 없으면 거부한다.
+            - name: CF_ACCESS_TEAM_DOMAIN
+              value: duchi-home.cloudflareaccess.com
+            - name: CF_ACCESS_AUD
+              value: fc271339fb1dddcabdb66f347302b93bd13f50426a3035f3382f1822ca71606e
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: app
+              mountPath: /app
+              readOnly: true
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+      volumes:
+        - name: app
+          configMap:
+            name: bulkup-app
+        - name: data
+          persistentVolumeClaim:
+            claimName: bulkup-data

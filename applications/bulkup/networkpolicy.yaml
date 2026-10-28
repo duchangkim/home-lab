@@ -1,0 +1,24 @@
+# 파드로 들어오는 트래픽은 Traefik(kube-system)만 허용한다.
+# kubectl port-forward(파드 안 localhost)와 kubelet 프로브는 이 정책의 대상이 아니다.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bulkup
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: bulkup
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 8080
+          protocol: TCP

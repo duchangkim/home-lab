@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>벌크업</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #0a0a0a; color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 15px; line-height: 1.5; }
+  body { padding: 16px; padding-bottom: 120px; max-width: 600px; margin: 0 auto; }
+  a { color: #5dade2; text-decoration: none; }
+  .app-h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .app-sub { color: #888; font-size: 13px; margin-bottom: 16px; }
+  .app-err { background: #2a0d12; border: 1px solid #c0392b; border-radius: 8px; padding: 12px; margin: 12px 0; font-size: 13px; color: #f3b4ad; }
+  .app-card { display: block; background: #1a1a1a; border-radius: 8px; padding: 12px; margin-bottom: 10px; color: #f5f5f5; border-left: 3px solid #333; }
+  .app-card.today { border-left-color: #ff5722; }
+  .app-card .d { color: #888; font-size: 12px; }
+  .app-card .t { font-size: 15px; font-weight: 600; margin: 2px 0 6px; }
+  .app-chip { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 8px; margin-right: 6px; background: #222; color: #aaa; border: 1px solid #333; }
+  .app-chip.done { background: #12241a; color: #8ee0a8; border-color: #27ae60; }
+  .app-chip.prog { background: #2e1a0a; color: #ffb85c; border-color: #e67e22; }
+  .app-chip.ana { background: #0d1a2a; color: #9ccdf0; border-color: #2980b9; }
+  .app-links { display: flex; gap: 12px; margin: 0 0 16px; font-size: 14px; }
+  .app-nav { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 10px; }
+  .app-sync { font-size: 12px; padding: 2px 8px; border-radius: 8px; background: #1a1a1a; color: #888; }
+  .app-sync.ok { color: #8ee0a8; }
+  .app-sync.pending { color: #ffb85c; }
+  .app-sync.fail { color: #ff7a5c; background: #2a0d12; }
+  .app-banner { background: #12241a; border: 1px solid #27ae60; border-radius: 8px; padding: 10px 12px; margin: 0 0 12px; font-size: 13px; color: #8ee0a8; }
+  .md h1, .md h2, .md h3, .md h4, .md h5 { margin: 18px 0 8px; font-size: 16px; }
+  .md h1 { font-size: 19px; } .md h4 { font-size: 15px; } .md h5 { font-size: 14px; color: #ccc; }
+  .md p, .md ul, .md ol, .md blockquote { margin: 8px 0; font-size: 14px; }
+  .md ul, .md ol { padding-left: 20px; }
+  .md blockquote { border-left: 3px solid #444; padding-left: 10px; color: #aaa; }
+  .md code { background: #222; padding: 0 4px; border-radius: 3px; font-family: ui-monospace, "SF Mono", monospace; font-size: 12px; }
+  .md .tw { overflow-x: auto; margin: 8px 0; }
+  .md table { border-collapse: collapse; font-size: 12px; }
+  .md td, .md th { border: 1px solid #333; padding: 3px 6px; vertical-align: top; }
+  .md th { background: #1a1a1a; }
+</style>
+<style id="plan-css"></style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+'use strict';
+var root = document.getElementById('root');
+var Q = new URLSearchParams(location.search);
+var ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function api(method, path, body, ctype) {
+  var opt = { method: method, headers: { 'X-Bulkup': '1' }, credentials: 'same-origin', cache: 'no-store', redirect: 'error' };
+  if (body !== undefined) {
+    opt.headers['Content-Type'] = ctype || 'application/json';
+    opt.body = typeof body === 'string' ? body : JSON.stringify(body);
+  }
+  return fetch(path, opt).then(function (r) {
+    if (!r.ok) { var e = new Error(method + ' ' + path + ' → ' + r.status); e.status = r.status; throw e; }
+    return r;
+  });
+}
+function lsGet(k) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+var WD = ['일', '월', '화', '수', '목', '금', '토'];
+function dayLabel(s) { if (!s) return ''; var d = new Date(s + 'T00:00:00'); return s + ' (' + WD[d.getDay()] + ')'; }
+
+// ------------------------------------------------------------------ 목록
+function showList() {
+  document.title = '벌크업';
+  root.innerHTML = '<div class="app-h1">벌크업 트래커</div><div class="app-sub">불러오는 중…</div>';
+  api('GET', '/api/plans').then(function (r) { return r.json(); }).then(function (d) {
+    var today = todayStr(), html = '<div class="app-h1">벌크업 트래커</div>' +
+      '<div class="app-links"><a href="/dashboard">📊 대시보드</a></div>';
+    if (!d.plans.length) html += '<div class="app-sub">아직 올라온 처방이 없습니다.</div>';
+    d.plans.forEach(function (p) {
+      var chips = '';
+      if (p.completed_at) chips += '<span class="app-chip done">✅ 완료</span>';
+      else if (p.has_progress) chips += '<span class="app-chip prog">✍️ 진행 중</span>';
+      if (p.slot) chips += '<span class="app-chip">' + esc(p.slot) + '</span>';
+      html += '<a class="app-card' + (p.date === today ? ' today' : '') + '" href="?s=' + encodeURIComponent(p.id) + '">' +
+        '<div class="d">' + esc(dayLabel(p.date)) + (p.date === today ? ' · 오늘' : '') + '</div>' +
+        '<div class="t">' + esc(p.title) + '</div>' + chips + '</a>';
+      if (p.has_analysis) html += '<div style="margin:-4px 0 12px 12px;font-size:13px"><a href="?a=' + encodeURIComponent(p.id) + '">📝 분석 요약 보기</a></div>';
+    });
+    root.innerHTML = html;
+  }).catch(function (e) {
+    root.innerHTML = '<div class="app-h1">벌크업 트래커</div><div class="app-err">목록을 불러오지 못했습니다 (' + esc(e.message) +
+      '). 네트워크 또는 로그인 만료일 수 있습니다 — 새로고침해 주세요.</div>';
+  });
+}
+
+// ------------------------------------------------------------------ 분석 요약 (마크다운 → 이스케이프 후 최소 서식)
+function mdInline(s) {
+  return s.replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>');
+}
+function renderMd(src) {
+  var lines = esc(src).split('\n'), out = [], i = 0;
+  while (i < lines.length) {
+    var l = lines[i], m;
+    if (!l.trim()) { i++; continue; }
+    if ((m = l.match(/^(#{1,6})\s+(.*)$/))) { var n = Math.min(m[1].length, 5); out.push('<h' + n + '>' + mdInline(m[2]) + '</h' + n + '>'); i++; continue; }
+    if (/^\s*\|/.test(l)) {
+      var rows = [];
+      while (i < lines.length && /^\s*\|/.test(lines[i])) { rows.push(lines[i]); i++; }
+      var t = '<div class="tw"><table>';
+      rows.forEach(function (r, ri) {
+        if (/^\s*\|[\s:|-]+\|\s*$/.test(r)) return;
+        var cells = r.trim().replace(/^\||\|$/g, '').split('|');
+        var tag = ri === 0 ? 'th' : 'td';
+        t += '<tr>' + cells.map(function (c) { return '<' + tag + '>' + mdInline(c.trim()) + '</' + tag + '>'; }).join('') + '</tr>';
+      });
+      out.push(t + '</table></div>'); continue;
+    }
+    if (/^\s*([-*·]|\d+\.)\s+/.test(l)) {
+      var ordered = /^\s*\d+\./.test(l), items = [];
+      while (i < lines.length && /^\s*([-*·]|\d+\.)\s+/.test(lines[i])) { items.push(lines[i].replace(/^\s*([-*·]|\d+\.)\s+/, '')); i++; }
+      out.push((ordered ? '<ol>' : '<ul>') + items.map(function (x) { return '<li>' + mdInline(x) + '</li>'; }).join('') + (ordered ? '</ol>' : '</ul>'));
+      continue;
+    }
+    if (/^&gt;\s?/.test(l)) {
+      var q = [];
+      while (i < lines.length && /^&gt;\s?/.test(lines[i])) { q.push(mdInline(lines[i].replace(/^&gt;\s?/, ''))); i++; }
+      out.push('<blockquote>' + q.join('<br>') + '</blockquote>'); continue;
+    }
+    var para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#{1,6}\s|\s*\||\s*([-*·]|\d+\.)\s|&gt;)/.test(lines[i])) { para.push(mdInline(lines[i])); i++; }
+    out.push('<p>' + para.join('<br>') + '</p>');
+  }
+  return out.join('\n');
+}
+function showAnalysis(id) {
+  document.title = '분석 — ' + id;
+  root.innerHTML = '<div class="app-nav"><a href="/">← 목록</a></div><div class="app-sub">불러오는 중…</div>';
+  api('GET', '/api/analysis/' + encodeURIComponent(id)).then(function (r) { return r.text(); }).then(function (t) {
+    root.innerHTML = '<div class="app-nav"><a href="/">← 목록</a><a href="?s=' + encodeURIComponent(id) + '">트래커</a></div><div class="md">' + renderMd(t) + '</div>';
+  }).catch(function (e) {
+    root.innerHTML = '<div class="app-nav"><a href="/">← 목록</a></div><div class="app-err">분석 요약을 불러오지 못했습니다 (' + esc(e.message) + ').</div>';
+  });
+}
+
+// ------------------------------------------------------------------ 트래커 (기존 HTML 트래커의 동작을 그대로 옮김)
+var PLAN_ID, P, META, exercises, STORAGE_KEY, META_INPUTS;
+var state = {}, mcgillState = {}, prepState = {}, gateState = {}, symState = {}, checkState = {};
+var notes = { 'session': '', 'ex-mcgill': '', 'ex-prep': '' };
+var startedOn = null, savedAt = 0, completedAt = null;
+
+function localDate() { return todayStr(); }
+// 실제 수행일 자동 보정 (2026-09-17 트래커 규칙): 첫 입력일이 META.date와 다르면 date·session_id·days_since_injury를 맞춘다.
+function effectiveMeta() {
+  var d = startedOn || localDate();
+  if (d === META.date) return META;
+  var inj = new Date('2026-05-08T00:00:00'), dd = new Date(d + 'T00:00:00');
+  return Object.assign({}, META, { date: d, session_id: d.replace(/-/g, '') + '_' + META.day_type,
+    days_since_injury: Math.round((dd - inj) / 86400000), date_corrected_from: META.date });
+}
+
+function wtxt(w) { return (w == null || w === '') ? '맨몸' : (w + 'kg'); }
+function renderExercises() {
+  Object.keys(exercises).forEach(function (key) {
+    var ex = exercises[key], c = document.getElementById(key), html = '';
+    if (!c) return;
+    ex.sets.forEach(function (set, i) {
+      var cat = set.cat || ex.category;
+      var target = wtxt(set.w) + ' × ' + (set.amrap ? (set.reps + '+') : set.reps);
+      var tags = ' <span style="color:#666;font-size:11px">(' + cat + (set.note ? '·' + set.note : '') + ')</span>';
+      html += '<div class="set-row"><span class="set-label">' + cat.slice(0, 5) + '</span>' +
+        '<span class="set-target">' + target + tags + '</span>' +
+        '<input type="text" class="set-input ' + (set.amrap ? 'amrap' : '') + '" data-ex="' + key + '" data-set="' + i + '" placeholder="' + set.reps + '">' +
+        '<button class="check" data-ex="' + key + '" data-set="' + i + '">○</button></div>';
+    });
+    html += '<textarea data-notes="' + key + '" placeholder="자세·통증·RIR·실제무게 메모"></textarea>';
+    c.insertAdjacentHTML('beforeend', html);
+  });
+}
+function renderVolume() {
+  var el = document.getElementById('volTable');
+  if (!el) return;
+  var html = '';
+  P.week_volume.forEach(function (v) {
+    var total = v.done + v.today;
+    var cls = v.locked ? 'lock' : (v.ramp ? 'ramp' : (total >= v.target ? 'ok' : 'short'));
+    var mark = v.locked ? ' 🔒' : (v.ramp ? ' ↗' : '');
+    var todayTxt = v.today ? ' <span class="today">(오늘 +' + v.today + ')</span>' : '';
+    html += '<tr><td>' + v.g + mark + '</td><td class="' + cls + '">' + total + ' / ' + v.target + '</td><td>' + todayTxt + '</td></tr>';
+  });
+  el.innerHTML = html;
+}
+
+function toggleBtn(t, store, key) { store[key] = !store[key]; t.classList.toggle('done', store[key]); t.textContent = store[key] ? '✓' : '○'; }
+function bindEvents() {
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.dataset.ex !== undefined && t.classList.contains('set-input')) { state[t.dataset.ex].sets[parseInt(t.dataset.set, 10)].actual = t.value; saveState(); }
+    else if (t.dataset.notes) {
+      if (notes.hasOwnProperty(t.dataset.notes)) notes[t.dataset.notes] = t.value;
+      else if (state[t.dataset.notes]) state[t.dataset.notes].notes = t.value;
+      saveState();
+    } else if (t.dataset.check && t.type === 'text') { checkState[t.dataset.check] = t.value; saveState(); }
+    else if (META_INPUTS.indexOf(t.id) >= 0) { saveState(); }
+  });
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.classList && t.classList.contains('check')) {
+      if (t.dataset.ex !== undefined) { var s = state[t.dataset.ex].sets[parseInt(t.dataset.set, 10)]; s.done = !s.done; t.classList.toggle('done', s.done); t.textContent = s.done ? '✓' : '○'; }
+      else if (t.dataset.mcgill) toggleBtn(t, mcgillState, t.dataset.mcgill);
+      else if (t.dataset.prep) toggleBtn(t, prepState, t.dataset.prep);
+      saveState();
+    }
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target.dataset.check && e.target.type === 'checkbox') { checkState[e.target.dataset.check] = e.target.checked; saveState(); }
+    else if (e.target.dataset.gate) { gateState[e.target.dataset.gate] = e.target.checked; saveState(); }
+    else if (e.target.dataset.sym) { symState[e.target.dataset.sym] = e.target.checked; saveState(); }
+  });
+  document.getElementById('btnReset').addEventListener('click', resetData);
+  document.getElementById('btnJson').addEventListener('click', function () { openModal('JSON 내보내기 · schema_version 2', JSON.stringify(buildExport(), null, 2)); });
+  document.getElementById('btnDone').addEventListener('click', completeSession);
+  document.getElementById('btnClose').addEventListener('click', closeModal);
+  document.getElementById('btnCopy').addEventListener('click', copyJSON);
+  window.addEventListener('online', function () { if (dirty) pushProgress(); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && dirty) pushProgress(); });
+}
+
+// 진행 상태 = 기존 트래커 localStorage 객체와 같은 모양 + savedAt·completedAt
+function snapshot() {
+  var m = {};
+  META_INPUTS.forEach(function (id) { var el = document.getElementById(id); if (el) m[id] = el.value; });
+  return {
+    meta: m, startedOn: startedOn, state: state, mcgill: mcgillState, prep: prepState, gate: gateState, sym: symState,
+    check: checkState, sessionNote: notes['session'], mcgillNote: notes['ex-mcgill'], prepNote: notes['ex-prep'],
+    savedAt: savedAt, completedAt: completedAt
+  };
+}
+function saveState() {
+  if (!startedOn) startedOn = localDate();
+  savedAt = Date.now();
+  var ok = lsSet(STORAGE_KEY, snapshot());
+  showSaveIndicator(ok ? '자동 저장됨' : '⚠️ 기기 저장 실패');
+  schedulePush();
+}
+function restoreBtns(sel, store, src) {
+  Object.keys(src || {}).forEach(function (k) { store[k] = src[k]; var b = document.querySelector('button.check[' + sel + '="' + k + '"]'); if (b) { b.classList.toggle('done', !!store[k]); b.textContent = store[k] ? '✓' : '○'; } });
+}
+function applyState(d) {
+  if (!d) return;
+  if (d.startedOn) startedOn = d.startedOn;
+  savedAt = d.savedAt || 0;
+  completedAt = d.completedAt || null;
+  if (d.meta) META_INPUTS.forEach(function (id) { var el = document.getElementById(id); if (el && d.meta[id]) el.value = d.meta[id]; });
+  notes['session'] = d.sessionNote || ''; notes['ex-mcgill'] = d.mcgillNote || ''; notes['ex-prep'] = d.prepNote || '';
+  ['session', 'ex-mcgill', 'ex-prep'].forEach(function (k) { var ta = document.querySelector('[data-notes="' + k + '"]'); if (ta && notes[k]) ta.value = notes[k]; });
+  if (d.state) Object.keys(d.state).forEach(function (key) {
+    if (!state[key]) return;
+    state[key].notes = d.state[key].notes || '';
+    var nt = document.querySelector('[data-notes="' + key + '"]'); if (nt) nt.value = state[key].notes;
+    (d.state[key].sets || []).forEach(function (s, i) {
+      if (!state[key].sets[i]) return;
+      state[key].sets[i].actual = s.actual || ''; state[key].sets[i].done = !!s.done;
+      var inp = document.querySelector('[data-ex="' + key + '"][data-set="' + i + '"].set-input'); if (inp) inp.value = s.actual || '';
+      var btn = document.querySelector('button.check[data-ex="' + key + '"][data-set="' + i + '"]');
+      if (btn) { btn.classList.toggle('done', !!s.done); btn.textContent = s.done ? '✓' : '○'; }
+    });
+  });
+  restoreBtns('data-mcgill', mcgillState, d.mcgill);
+  restoreBtns('data-prep', prepState, d.prep);
+  if (d.gate) Object.keys(d.gate).forEach(function (k) { gateState[k] = d.gate[k]; var cb = document.querySelector('[data-gate="' + k + '"]'); if (cb) cb.checked = d.gate[k]; });
+  if (d.sym) Object.keys(d.sym).forEach(function (k) { symState[k] = d.sym[k]; var cb = document.querySelector('[data-sym="' + k + '"]'); if (cb) cb.checked = d.sym[k]; });
+  if (d.check) Object.keys(d.check).forEach(function (k) {
+    checkState[k] = d.check[k];
+    var el = document.querySelector('[data-check="' + k + '"]');
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!d.check[k]; else el.value = d.check[k] || '';
+  });
+}
+var saveTimer;
+function showSaveIndicator(text) {
+  var el = document.getElementById('saveIndicator'); el.textContent = text; el.classList.add('show');
+  clearTimeout(saveTimer); saveTimer = setTimeout(function () { el.classList.remove('show'); }, 1000);
+}
+
+// ------------------------------------------------------------------ 서버 동기화 (기기 저장이 먼저, 서버는 재시도)
+var dirty = false, pushTimer = null, retryTimer = null, pushing = false, pushAgain = false;
+function setSync(kind, text) { var el = document.getElementById('sync'); if (el) { el.className = 'app-sync ' + kind; el.textContent = text; } }
+function schedulePush() { dirty = true; setSync('pending', '서버 저장 대기'); clearTimeout(pushTimer); pushTimer = setTimeout(pushProgress, 800); }
+function pushProgress() {
+  if (pushing) { pushAgain = true; return; }
+  clearTimeout(pushTimer); clearTimeout(retryTimer);
+  pushing = true;
+  var snap = snapshot();
+  api('PUT', '/api/progress/' + encodeURIComponent(PLAN_ID), { saved_at: snap.savedAt, data: snap }).then(function () {
+    if (savedAt === snap.savedAt) { dirty = false; setSync('ok', '서버 저장됨 ' + new Date().toTimeString().slice(0, 5)); }
+  }).catch(function (e) {
+    setSync('fail', '⚠️ 동기화 안 됨 — 기기에는 저장됨' + (e.status ? ' (' + e.status + ')' : ''));
+    retryTimer = setTimeout(pushProgress, 10000);
+  }).then(function () {
+    pushing = false;
+    if (pushAgain) { pushAgain = false; pushProgress(); }
+  });
+}
+
+// ------------------------------------------------------------------ schema v2 내보내기 (트래커 exportJSON()과 같은 규칙)
+function val(id) { var el = document.getElementById(id); return el && el.value ? el.value : null; }
+function numOrNull(v) { var n = parseFloat(v); return isNaN(n) ? null : n; }
+// 세트 입력 파싱: "7" = 처방 무게로 7회 / "131x7" = 131kg 7회 / "131x7 r0" = RIR 0까지
+function parseActual(a, set, done) {
+  var out = { w: numOrNull(set.w), reps: null, rir: null };
+  var s = (a == null ? '' : String(a)).trim();
+  if (s) {
+    var m = s.match(/^(?:(\d+(?:\.\d+)?)\s*[x×*]\s*)?(\d+)(?:\s*r\s*(\d+(?:\.\d+)?))?/i);
+    if (m) { if (m[1]) out.w = parseFloat(m[1]); out.reps = parseInt(m[2], 10); if (m[3] != null) out.rir = parseFloat(m[3]); }
+  } else if (done) {
+    out.reps = (typeof set.reps === 'number' ? set.reps : null);
+  }
+  return out;
+}
+function buildSchema() {
+  var groups = {}, order = [];
+  Object.keys(exercises).forEach(function (key) {
+    var ex = exercises[key];
+    ex.sets.forEach(function (set, i) {
+      var cat = set.cat || ex.category, gk = ex.name + '||' + ex.equipment + '||' + cat;
+      if (!groups[gk]) {
+        groups[gk] = {
+          name: ex.name, equipment: ex.equipment, category: cat,
+          muscle_group: ex.muscle_group, track: ex.track,
+          rep_target: ex.rep_target, carryover: !!ex.carryover, progression: ex.progression,
+          sets: [], notes: state[key].notes || ''
+        };
+        order.push(gk);
+      } else if (state[key].notes && groups[gk].notes.indexOf(state[key].notes) < 0) {
+        groups[gk].notes = (groups[gk].notes ? groups[gk].notes + ' / ' : '') + state[key].notes;
+      }
+      var st = state[key].sets[i], act = parseActual(st.actual, set, st.done);
+      groups[gk].sets.push({
+        order: groups[gk].sets.length + 1,
+        prescribed: { weight_kg: numOrNull(set.w), reps: (typeof set.reps === 'number' ? set.reps : null) },
+        actual: { weight_kg: act.w, reps: act.reps },
+        rir: act.rir, done: !!st.done, note: set.note || ''
+      });
+    });
+  });
+  return order.map(function (k) { return groups[k]; });
+}
+function buildExport() {
+  var M = effectiveMeta();
+  var stores = { gate: gateState, mcgill: mcgillState, prep: prepState, sym: symState, check: checkState };
+  function resolve(t) {
+    if (Array.isArray(t)) return t.map(resolve);
+    if (t && typeof t === 'object') {
+      var ks = Object.keys(t);
+      if (ks.length === 1 && ks[0].charAt(0) === '$') {
+        var k = ks[0], v = t[k];
+        switch (k) {
+          case '$meta': return M[v];
+          case '$meta_or_null': return M[v] || null;
+          case '$val': return val(v);
+          case '$num': return numOrNull(val(v));
+          case '$flag': return !!stores[v[0]][v[1]];
+          case '$check': return checkState[v];
+          case '$check_or_null': return checkState[v] || null;
+          case '$state': return stores[v];
+          case '$note': return notes[v];
+          case '$exercises': return buildSchema();
+          case '$week_volume': return P.week_volume;
+          case '$now': return new Date().toISOString();
+        }
+        throw new Error('알 수 없는 템플릿 지시어 ' + k);
+      }
+      var o = {};
+      ks.forEach(function (key) { o[key] = resolve(t[key]); });
+      return o;
+    }
+    return t;
+  }
+  return resolve(P.export_template);
+}
+
+function openModal(title, text) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('jsonOutput').value = text;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+function copyJSON(e) {
+  var ta = document.getElementById('jsonOutput'), b = e.target, o = b.textContent;
+  function done() { b.textContent = '복사됨!'; setTimeout(function () { b.textContent = o; }, 1500); }
+  if (navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done, function () { ta.select(); try { document.execCommand('copy'); done(); } catch (x) {} });
+  else { ta.select(); try { document.execCommand('copy'); done(); } catch (x) {} }
+}
+function showCompleted() {
+  var el = document.getElementById('doneBanner');
+  if (completedAt) { el.style.display = ''; el.textContent = '✅ 세션 완료 — 서버에 저장됨 (' + new Date(completedAt).toLocaleString('ko-KR') + '). 수정 후 다시 누르면 이전 판은 보존되고 새로 저장됩니다.'; }
+  else el.style.display = 'none';
+}
+function completeSession() {
+  var data;
+  try { data = buildExport(); } catch (e) { openModal('내보내기 오류', String(e)); return; }
+  if (!confirm(completedAt ? '이미 완료한 세션입니다. 지금 내용으로 다시 저장할까요? (이전 판은 서버에 보존)' : '세션을 완료하고 결과를 서버에 저장할까요?')) return;
+  api('POST', '/api/results/' + encodeURIComponent(PLAN_ID), data).then(function () {
+    completedAt = new Date().toISOString();
+    saveState();
+    showCompleted();
+    window.scrollTo(0, 0);
+  }).catch(function (e) {
+    openModal('⚠️ 서버 저장 실패 (' + e.message + ') — 아래 JSON을 복사해 채팅으로 보내 주세요', JSON.stringify(data, null, 2));
+  });
+}
+function resetData() {
+  if (!confirm('모든 입력 데이터를 초기화하시겠습니까? (기기와 서버의 진행 중 입력이 지워집니다. 완료된 결과는 남습니다)')) return;
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  api('PUT', '/api/progress/' + encodeURIComponent(PLAN_ID), { saved_at: Date.now(), data: null })
+    .catch(function () {}).then(function () { location.reload(); });
+}
+
+function mountPlan(plan) {
+  P = plan; META = plan.meta; exercises = plan.exercises; STORAGE_KEY = plan.storage_key; META_INPUTS = plan.meta_inputs;
+  document.title = plan.title;
+  document.getElementById('plan-css').textContent = plan.css;
+  root.innerHTML =
+    '<div class="save-indicator" id="saveIndicator">자동 저장됨</div>' +
+    '<div class="app-nav"><a href="/">← 목록</a><span id="sync" class="app-sync">서버 확인 중</span></div>' +
+    '<div class="app-banner" id="doneBanner" style="display:none"></div>' +
+    plan.body_html +
+    '<div class="actions"><div class="actions-inner">' +
+    '<button class="action secondary" id="btnReset">초기화</button>' +
+    '<button class="action secondary" id="btnJson">JSON</button>' +
+    '<button class="action primary" id="btnDone">세션 완료</button>' +
+    '</div></div>' +
+    '<div class="modal" id="modal"><div class="modal-content">' +
+    '<h2 id="modalTitle" style="margin:0 0 12px;background:none;border:none;padding:0"></h2>' +
+    '<textarea id="jsonOutput" readonly></textarea>' +
+    '<div class="modal-actions"><button class="action secondary" id="btnClose">닫기</button><button class="action primary" id="btnCopy">복사</button></div>' +
+    '</div></div>';
+  Object.keys(exercises).forEach(function (k) { state[k] = { sets: exercises[k].sets.map(function () { return { actual: '', done: false }; }), notes: '' }; });
+  renderExercises();
+  renderVolume();
+  bindEvents();
+}
+
+function showSession(id) {
+  PLAN_ID = id;
+  var cacheKey = 'bulkup_plan_' + id;
+  root.innerHTML = '<div class="app-nav"><a href="/">← 목록</a></div><div class="app-sub">불러오는 중…</div>';
+  api('GET', '/api/plans/' + encodeURIComponent(id)).then(function (r) { return r.json(); }).then(function (plan) {
+    lsSet(cacheKey, plan);
+    return plan;
+  }, function (e) {
+    var cached = lsGet(cacheKey);
+    if (cached) return cached;  // 체육관 네트워크가 불안정할 때 — 마지막으로 받은 처방
+    throw e;
+  }).then(function (plan) {
+    mountPlan(plan);
+    var local = lsGet(STORAGE_KEY);
+    applyState(local);
+    showCompleted();
+    return api('GET', '/api/progress/' + encodeURIComponent(id)).then(function (r) { return r.json(); }, function (e) {
+      if (e.status === 404) return null;
+      throw e;
+    }).then(function (srv) {
+      var localAt = (local && local.savedAt) || 0, srvAt = (srv && srv.saved_at) || 0;
+      if (srv && srvAt > localAt) {
+        // 서버 판이 더 새로우면(다른 기기에서 입력·초기화) 기기 판 위에 덮지 않고 서버 판으로 다시 시작한다
+        if (srv.data) {
+          var stored = lsSet(STORAGE_KEY, srv.data) && (lsGet(STORAGE_KEY) || {}).savedAt === srv.data.savedAt;
+          if (stored && local) { location.reload(); return; }
+          applyState(srv.data);
+        } else if (local) { try { localStorage.removeItem(STORAGE_KEY); } catch (x) {} if (!lsGet(STORAGE_KEY)) { location.reload(); return; } }
+        showCompleted();
+        setSync('ok', '서버 내용 불러옴');
+      } else if (localAt > srvAt) {
+        dirty = true; pushProgress();
+      } else setSync('ok', '서버와 같음');
+    }).catch(function (e) {
+      setSync('fail', '⚠️ 서버 연결 안 됨 — 기기에 저장 중');
+      if (local) dirty = true;
+      retryTimer = setTimeout(pushProgress, 10000);
+    });
+  }).catch(function (e) {
+    root.innerHTML = '<div class="app-nav"><a href="/">← 목록</a></div><div class="app-err">처방을 불러오지 못했습니다 (' + esc(e.message) +
+      '). 네트워크 또는 로그인 만료일 수 있습니다 — 새로고침해 주세요.</div>';
+  });
+}
+
+(function route() {
+  var s = Q.get('s'), a = Q.get('a');
+  if (s && ID_RE.test(s)) showSession(s);
+  else if (a && ID_RE.test(a)) showAnalysis(a);
+  else showList();
+})();
+</script>
+</body>
+</html>
