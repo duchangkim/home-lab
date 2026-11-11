@@ -143,6 +143,9 @@ spec:
               value: /tmp/tailscaled.sock
             - name: TS_SERVE_CONFIG
               value: /etc/tailscale/serve.json
+            # 대화형 로그인(URL 승인)을 기다리는 시간. 기본값 60초로는 승인 전에 재시작돼 상태가 저장되지 않는다.
+            - name: TS_BOOT_TIMEOUT
+              value: "30m"
             # 이미 로그인된 상태가 있으면 auth key를 다시 쓰지 않는다.
             - name: TS_AUTH_ONCE
               value: "true"
