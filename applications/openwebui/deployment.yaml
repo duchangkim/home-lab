@@ -39,13 +39,22 @@ spec:
                 secretKeyRef:
                   name: openwebui-secret
                   key: webui-secret-key
-            - name: OPENAI_API_KEY
+            # OpenAI 호환 연결: 1순위 CLIProxyAPI(클러스터 내부), 2순위 OpenRouter
+            # 주의: PersistentConfig라서 이미 저장된 설정이 있으면 env보다 DB 값이 우선한다.
+            - name: CLI_PROXY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openwebui-secret
+                  key: cli-proxy-api-key
+            - name: OPENROUTER_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: openwebui-secret
                   key: openrouter-api-key
-            - name: OPENAI_API_BASE_URL
-              value: "https://openrouter.ai/api/v1"
+            - name: OPENAI_API_BASE_URLS
+              value: "http://cli-proxy-api.default.svc.cluster.local:8317/v1;https://openrouter.ai/api/v1"
+            - name: OPENAI_API_KEYS
+              value: "$(CLI_PROXY_API_KEY);$(OPENROUTER_API_KEY)"
           volumeMounts:
             - name: data
               mountPath: /app/backend/data

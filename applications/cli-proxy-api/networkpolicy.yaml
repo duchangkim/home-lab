@@ -1,0 +1,21 @@
+# 클러스터 안에서는 OpenWebUI 파드만 API 포트에 접근할 수 있다.
+# Tailscale 사이드카와 kubectl port-forward는 파드 안 localhost로 들어오므로 이 정책의 대상이 아니다.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cli-proxy-api
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: cli-proxy-api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: openwebui
+      ports:
+        - port: 8317
+          protocol: TCP

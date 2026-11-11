@@ -1,0 +1,188 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cli-proxy-api
+  namespace: default
+spec:
+  replicas: 1
+  # RWO PVC와 bbolt(kv.db) 파일 잠금 때문에 두 파드가 동시에 뜨지 않게 한다.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cli-proxy-api
+  template:
+    metadata:
+      labels:
+        app: cli-proxy-api
+      annotations:
+        # 설정 템플릿을 바꾸면 이 값을 갱신해 파드를 재시작한다.
+        homelab/config-revision: "1"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # ConfigMap 템플릿의 자리표시자를 시크릿 값으로 치환해 쓰기 가능한 emptyDir에 config.yaml을 만든다.
+        - name: render-config
+          image: eceasy/cli-proxy-api:v8.0.67
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              mkdir -p /data/auths /data/runtime /data/tailscale
+              sed -e "s|__MANAGEMENT_KEY__|${MANAGEMENT_KEY}|" \
+                  -e "s|__API_KEY_OPENWEBUI__|${API_KEY_OPENWEBUI}|" \
+                  -e "s|__API_KEY_PERSONAL__|${API_KEY_PERSONAL}|" \
+                  /template/config.yaml > /conf/config.yaml
+          env:
+            - name: MANAGEMENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cli-proxy-api-secret
+                  key: management-key
+            - name: API_KEY_OPENWEBUI
+              valueFrom:
+                secretKeyRef:
+                  name: cli-proxy-api-secret
+                  key: api-key-openwebui
+            - name: API_KEY_PERSONAL
+              valueFrom:
+                secretKeyRef:
+                  name: cli-proxy-api-secret
+                  key: api-key-personal
+          volumeMounts:
+            - name: template
+              mountPath: /template
+              readOnly: true
+            - name: conf
+              mountPath: /conf
+            - name: data
+              mountPath: /data
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+      containers:
+        - name: cli-proxy-api
+          image: eceasy/cli-proxy-api:v8.0.67
+          imagePullPolicy: IfNotPresent
+          command: ["/CLIProxyAPI/CLIProxyAPI", "-config", "/conf/config.yaml"]
+          ports:
+            - name: http
+              containerPort: 8317
+          env:
+            - name: HOME
+              value: /data
+            # 관리 패널 정적 파일(static/)과 로그 디렉터리 위치
+            - name: WRITABLE_PATH
+              value: /data/runtime
+            - name: TZ
+              value: Asia/Seoul
+          volumeMounts:
+            - name: conf
+              mountPath: /conf
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "96Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+
+        # tailnet에 `cli-proxy` 노드로 참여해 8317 포트를 파드 안 localhost로 전달한다.
+        # 사용자 공간 모드라 NET_ADMIN이나 /dev/net/tun이 필요 없다.
+        - name: tailscale
+          image: tailscale/tailscale:v1.104.4
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TS_HOSTNAME
+              value: cli-proxy
+            - name: TS_USERSPACE
+              value: "true"
+            # 빈 값이면 Kubernetes Secret 대신 TS_STATE_DIR(PVC)에 상태를 저장한다.
+            - name: TS_KUBE_SECRET
+              value: ""
+            - name: TS_STATE_DIR
+              value: /var/lib/tailscale
+            - name: TS_SOCKET
+              value: /tmp/tailscaled.sock
+            - name: TS_SERVE_CONFIG
+              value: /etc/tailscale/serve.json
+            # 이미 로그인된 상태가 있으면 auth key를 다시 쓰지 않는다.
+            - name: TS_AUTH_ONCE
+              value: "true"
+            # 없으면 이 컨테이너 로그에 로그인 URL이 출력된다.
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: cli-proxy-api-secret
+                  key: ts-authkey
+                  optional: true
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/tailscale
+              subPath: tailscale
+            - name: template
+              mountPath: /etc/tailscale/serve.json
+              subPath: serve.json
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "48Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+      volumes:
+        - name: template
+          configMap:
+            name: cli-proxy-api-config
+        - name: conf
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          persistentVolumeClaim:
+            claimName: cli-proxy-api-data

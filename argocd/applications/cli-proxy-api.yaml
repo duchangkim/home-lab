@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cli-proxy-api
+  namespace: argocd
+  # 이미지 태그는 deployment.yaml에서 수동으로 고정한다(릴리스가 하루에 여러 번 나온다).
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/duchangkim/home-lab.git
+    targetRevision: main
+    path: applications/cli-proxy-api
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
