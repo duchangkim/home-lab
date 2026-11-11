@@ -1,0 +1,69 @@
+{
+  "openai": {
+    "enable": true,
+    "connections": [
+      {
+        "url": "http://cli-proxy-api.default.svc.cluster.local:8317/v1",
+        "key": "$env:CLI_PROXY_API_KEY",
+        "config": {
+          "enable": true,
+          "connection_type": "external",
+          "prefix_id": "",
+          "tags": [{ "name": "CLIProxy" }],
+          "model_ids": [
+            "claude-fable-5-2",
+            "claude-opus-5-5",
+            "claude-sonnet-5-5",
+            "claude-haiku-5-5",
+            "gpt-6.1-sol",
+            "gpt-6.1-terra",
+            "gpt-6-sol"
+          ]
+        }
+      },
+      {
+        "url": "https://openrouter.ai/api/v1",
+        "key": "$env:OPENROUTER_API_KEY",
+        "config": {}
+      }
+    ]
+  },
+  "models": [
+    { "id": "claude-fable-5-2", "name": "Claude Fable 5.2", "meta": { "description": "CLIProxy · Claude 구독" } },
+    { "id": "claude-opus-5-5", "name": "Claude Opus 5.5", "meta": { "description": "CLIProxy · Claude 구독" } },
+    { "id": "claude-sonnet-5-5", "name": "Claude Sonnet 5.5", "meta": { "description": "CLIProxy · Claude 구독" } },
+    { "id": "claude-haiku-5-5", "name": "Claude Haiku 5.5", "meta": { "description": "CLIProxy · Claude 구독" } },
+    { "id": "gpt-6.1-sol", "name": "GPT-6.1 Sol", "meta": { "description": "CLIProxy · ChatGPT(Codex) 구독" } },
+    { "id": "gpt-6.1-terra", "name": "GPT-6.1 Terra", "meta": { "description": "CLIProxy · ChatGPT(Codex) 구독" } },
+    { "id": "gpt-6-sol", "name": "GPT-6 Sol", "meta": { "description": "CLIProxy · ChatGPT(Codex) 구독" } }
+  ],
+  "model_defaults": {
+    "DEFAULT_MODELS": "claude-sonnet-5-5",
+    "MODEL_ORDER_LIST": [
+      "claude-sonnet-5-5",
+      "claude-opus-5-5",
+      "claude-fable-5-2",
+      "claude-haiku-5-5",
+      "gpt-6.1-sol",
+      "gpt-6.1-terra",
+      "gpt-6-sol"
+    ]
+  },
+  "images": {
+    "ENABLE_IMAGE_GENERATION": true,
+    "IMAGE_GENERATION_ENGINE": "openai",
+    "IMAGE_GENERATION_MODEL": "gpt-image-2.6",
+    "IMAGE_SIZE": "auto",
+    "IMAGES_OPENAI_API_BASE_URL": "http://cli-proxy-api.default.svc.cluster.local:8317/v1",
+    "IMAGES_OPENAI_API_KEY": "$env:CLI_PROXY_API_KEY",
+    "ENABLE_IMAGE_EDIT": true,
+    "IMAGE_EDIT_ENGINE": "openai",
+    "IMAGE_EDIT_MODEL": "gpt-image-2.6",
+    "IMAGE_EDIT_SIZE": "auto",
+    "IMAGES_EDIT_OPENAI_API_BASE_URL": "http://cli-proxy-api.default.svc.cluster.local:8317/v1",
+    "IMAGES_EDIT_OPENAI_API_KEY": "$env:CLI_PROXY_API_KEY"
+  },
+  "tasks": {
+    "TASK_MODEL_EXTERNAL": "claude-haiku-5-5"
+  }
+}

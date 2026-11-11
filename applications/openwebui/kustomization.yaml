@@ -4,3 +4,12 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - sealed-secret.yaml
+  - config-sync/job.yaml
+
+# OpenWebUI 설정의 정본. 바꾸면 ArgoCD 동기화 후 config-sync Job이 관리 API로 적용한다.
+configMapGenerator:
+  - name: openwebui-config-sync
+    namespace: default
+    files:
+      - config-sync/sync.py
+      - config-sync/desired.json

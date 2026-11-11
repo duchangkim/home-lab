@@ -1,0 +1,70 @@
+# OpenWebUI 설정 동기화 Job.
+# ArgoCD가 openwebui 앱을 동기화할 때마다(PostSync) desired.json을 관리 API로 적용한다.
+# UI에서 바꾼 값 중 desired.json에 있는 항목은 다음 동기화 때 Git 값으로 되돌아간다.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openwebui-config-sync
+  namespace: default
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: openwebui-config-sync
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: sync
+          image: python:3.13.18-alpine3.24
+          imagePullPolicy: IfNotPresent
+          command: ["python3", "-I", "/config/sync.py"]
+          env:
+            - name: OWUI_URL
+              value: http://openwebui.default.svc.cluster.local:8080
+            - name: OWUI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openwebui-secret
+                  key: admin-api-key
+            - name: CLI_PROXY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openwebui-secret
+                  key: cli-proxy-api-key
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openwebui-secret
+                  key: openrouter-api-key
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+      volumes:
+        - name: config
+          configMap:
+            name: openwebui-config-sync
