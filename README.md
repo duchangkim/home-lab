@@ -48,6 +48,7 @@ k3s와 ArgoCD를 사용한 GitOps 기반 홈서버 관리 프로젝트입니다.
 │   ├── n8n/                # 워크플로우 자동화 + PostgreSQL
 │   ├── beszel/             # 서버 모니터링 (Hub + Agent)
 │   ├── bulkup/             # 운동 트래커 (stdlib Python, 코드는 ConfigMap)
+│   ├── searxng/            # OpenWebUI 웹검색 백엔드 (클러스터 내부 전용)
 │   └── test-app/           # 테스트 앱 (whoami)
 ├── argocd/                 # ArgoCD Application 정의
 │   └── applications/       # App-of-Apps 매니페스트

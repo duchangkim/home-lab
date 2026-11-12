@@ -3,7 +3,9 @@
 desired.json에 적힌 설정을 OpenWebUI 관리 API로 적용한다.
 - 각 섹션은 현재 설정을 읽은 뒤 desired 값만 덮어써서 다시 저장한다(적지 않은 항목은 유지).
 - 문자열 값 "$env:NAME"은 같은 이름의 환경변수 값으로 바꾼다(시크릿은 Sealed Secret에서 주입).
-- models 항목은 기본 모델 엔트리(이름·설명·공개 범위)를 만들거나 갱신한다. 프로필 이미지 등 UI에서 바꾼 다른 메타데이터는 유지한다.
+- models 항목은 모델 엔트리(이름·설명·숨김·공개 범위)를 만들거나 갱신한다. 프로필 이미지 등 UI에서 바꾼 다른 메타데이터는 유지한다.
+  name을 생략하면 현재 이름(없으면 id)을 쓰고, public이 false면 공개 읽기 권한을 건드리지 않는다.
+- web 항목은 웹검색 설정(관리자 > 설정 > 웹 검색)에서 적은 키만 갱신한다.
 표준 라이브러리만 사용한다.
 """
 
@@ -97,13 +99,15 @@ def sync_openai(desired):
 
 def sync_models(models):
     for m in models:
-        status, current = call("GET", f"/api/v1/models/model?id={urllib.request.quote(m['id'])}")
+        mid = m["id"]
+        public = m.get("public", True)
+        status, current = call("GET", f"/api/v1/models/model?id={urllib.request.quote(mid)}")
         if status == 200 and current:
             meta = {**(current.get("meta") or {}), **m.get("meta", {})}
             form = {
-                "id": m["id"],
+                "id": mid,
                 "base_model_id": current.get("base_model_id"),
-                "name": m["name"],
+                "name": m.get("name") or current.get("name") or mid,
                 "meta": meta,
                 "params": current.get("params") or {},
                 "is_active": m.get("is_active", True),
@@ -113,31 +117,42 @@ def sync_models(models):
                 or current.get("meta") != meta
                 or current.get("is_active") != form["is_active"]
             ):
-                must("POST", f"/api/v1/models/model/update?id={urllib.request.quote(m['id'])}", form)
-                print(f"[models] 갱신: {m['id']}")
+                must("POST", f"/api/v1/models/model/update?id={urllib.request.quote(mid)}", form)
+                print(f"[models] 갱신: {mid}")
             grants = {(g["principal_type"], g["principal_id"], g["permission"]) for g in current.get("access_grants") or []}
-            if ("user", "*", "read") not in grants:
+            if public and ("user", "*", "read") not in grants:
                 must(
                     "POST",
                     "/api/v1/models/model/access/update",
-                    {"id": m["id"], "access_grants": [*current.get("access_grants", []), *PUBLIC_READ]},
+                    {"id": mid, "access_grants": [*current.get("access_grants", []), *PUBLIC_READ]},
                 )
-                print(f"[models] 공개 읽기 권한 추가: {m['id']}")
+                print(f"[models] 공개 읽기 권한 추가: {mid}")
         else:
             must(
                 "POST",
                 "/api/v1/models/create",
                 {
-                    "id": m["id"],
+                    "id": mid,
                     "base_model_id": None,
-                    "name": m["name"],
+                    "name": m.get("name") or mid,
                     "meta": m.get("meta", {}),
                     "params": {},
-                    "access_grants": PUBLIC_READ,
+                    "access_grants": PUBLIC_READ if public else [],
                     "is_active": m.get("is_active", True),
                 },
             )
-            print(f"[models] 생성: {m['id']}")
+            print(f"[models] 생성: {mid}")
+
+
+def sync_web(desired):
+    current = must("GET", "/api/v1/retrieval/config").get("web") or {}
+    changed = {k: v for k, v in desired.items() if current.get(k) != v}
+    if not changed:
+        print("[web] 변경 없음")
+        return
+    # WebConfig는 보낸 키만 저장한다(exclude_unset).
+    must("POST", "/api/v1/retrieval/config/update", {"web": changed})
+    print(f"[web] 갱신: {', '.join(sorted(changed))}")
 
 
 def main():
@@ -149,6 +164,8 @@ def main():
         sync_models(desired["models"])
     if "model_defaults" in desired:
         merge_section("model_defaults", "/api/v1/configs/models", "/api/v1/configs/models", desired["model_defaults"])
+    if "web" in desired:
+        sync_web(desired["web"])
     if "images" in desired:
         merge_section("images", "/api/v1/images/config", "/api/v1/images/config/update", desired["images"])
     if "tasks" in desired:

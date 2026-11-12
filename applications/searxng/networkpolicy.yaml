@@ -1,0 +1,21 @@
+# 클러스터 안에서는 OpenWebUI 파드만 검색 API에 접근할 수 있다.
+# kubelet 프로브와 kubectl port-forward는 이 정책의 영향을 받지 않는다.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: searxng
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: searxng
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: openwebui
+      ports:
+        - port: 8080
+          protocol: TCP

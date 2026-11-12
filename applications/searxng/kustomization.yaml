@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - networkpolicy.yaml
+  - sealed-secret.yaml
+
+# settings.yml을 바꾸면 해시가 붙은 새 ConfigMap이 생성돼 파드가 자동으로 재시작된다.
+configMapGenerator:
+  - name: searxng-config
+    namespace: default
+    files:
+      - settings.yml

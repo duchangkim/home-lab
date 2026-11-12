@@ -1,0 +1,35 @@
+# SearXNG 설정. 기본값(searx/settings.yml) 위에 여기 적은 값만 덮어쓴다.
+# OpenWebUI 웹검색 백엔드로만 쓰는 클러스터 내부 전용 인스턴스다.
+use_default_settings: true
+
+general:
+  instance_name: "homelab-search"
+
+server:
+  # 실제 값은 SEARXNG_SECRET 환경변수(searxng-secret)가 덮어쓴다.
+  secret_key: "overridden-by-SEARXNG_SECRET"
+  # 내부 전용이라 봇 차단(limiter, valkey 필요)과 이미지 프록시를 끈다.
+  limiter: false
+  public_instance: false
+  image_proxy: false
+
+valkey:
+  url: false
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "auto"
+  # OpenWebUI는 format=json으로 요청한다. json이 없으면 403이 난다.
+  formats:
+    - html
+    - json
+
+outgoing:
+  request_timeout: 4.0
+  max_request_timeout: 10.0
+  pool_connections: 50
+  pool_maxsize: 10
+
+ui:
+  static_use_hash: true
