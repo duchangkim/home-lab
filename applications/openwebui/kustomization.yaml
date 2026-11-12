@@ -13,3 +13,5 @@ configMapGenerator:
     files:
       - config-sync/sync.py
       - config-sync/desired.json
+      - config-sync/web-search.md
+      - config-sync/korean-output.md

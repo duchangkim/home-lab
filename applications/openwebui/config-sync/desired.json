@@ -28,6 +28,7 @@
       }
     ]
   },
+  "system_prompt": { "files": ["web-search.md", "korean-output.md"] },
   "models": [
     { "id": "claude-fable-5-2", "name": "Claude Fable 5.2", "meta": { "description": "CLIProxy · Claude 구독", "hidden": false } },
     { "id": "claude-opus-5-5", "name": "Claude Opus 5.5", "meta": { "description": "CLIProxy · Claude 구독", "hidden": false } },
@@ -70,10 +71,11 @@
     "WEB_SEARCH_ENGINE": "searxng",
     "SEARXNG_QUERY_URL": "http://searxng.default.svc.cluster.local:8080/search?q=<query>",
     "SEARXNG_LANGUAGE": "all",
-    "WEB_SEARCH_RESULT_COUNT": 8,
-    "WEB_SEARCH_CONCURRENT_REQUESTS": 4,
+    "WEB_SEARCH_RESULT_COUNT": 10,
+    "WEB_SEARCH_CONCURRENT_REQUESTS": 6,
     "WEB_LOADER_ENGINE": "",
-    "WEB_LOADER_CONCURRENT_REQUESTS": 4
+    "WEB_LOADER_CONCURRENT_REQUESTS": 8,
+    "WEB_FETCH_MAX_CONTENT_LENGTH": 40000
   },
   "images": {
     "ENABLE_IMAGE_GENERATION": true,

@@ -25,6 +25,16 @@ search:
     - html
     - json
 
+# 기본 활성 엔진(brave, duckduckgo, google cse, wikipedia 등)에 더해 일반 검색 엔진을 켠다.
+# 엔진을 여러 개 쓰면 한 엔진이 CAPTCHA나 rate limit으로 막혀도 결과가 비지 않고, 엔진별 요청 부담도 나뉜다.
+engines:
+  - name: bing
+    disabled: false
+  - name: startpage
+    disabled: false
+  - name: mojeek
+    disabled: false
+
 outgoing:
   request_timeout: 4.0
   max_request_timeout: 10.0

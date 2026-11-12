@@ -36,9 +36,10 @@ spec:
                   key: secret-key
             - name: SEARXNG_BASE_URL
               value: http://searxng.default.svc.cluster.local:8080/
-            # N95 4코어에 맞춰 워커 스레드를 줄인다(기본 4).
+            # 동시에 처리할 검색 요청 수. 요청 하나가 엔진들을 병렬로 조회하므로 CPU보다 I/O 대기가 대부분이다.
+            # 에이전트가 연속 검색하고 여러 사용자가 동시에 쓰는 경우를 고려해 기본값(4)보다 늘린다.
             - name: GRANIAN_BLOCKING_THREADS
-              value: "2"
+              value: "8"
           volumeMounts:
             - name: config
               mountPath: /etc/searxng
