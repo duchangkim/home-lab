@@ -85,17 +85,47 @@
   },
   "images": {
     "ENABLE_IMAGE_GENERATION": true,
-    "IMAGE_GENERATION_ENGINE": "openai",
-    "IMAGE_GENERATION_MODEL": "gpt-image-2.6",
-    "IMAGE_SIZE": "auto",
-    "IMAGES_OPENAI_API_BASE_URL": "http://cli-proxy-api.default.svc.cluster.local:8317/v1",
-    "IMAGES_OPENAI_API_KEY": "$env:CLI_PROXY_API_KEY",
     "ENABLE_IMAGE_EDIT": true,
-    "IMAGE_EDIT_ENGINE": "openai",
-    "IMAGE_EDIT_MODEL": "gpt-image-2.6",
-    "IMAGE_EDIT_SIZE": "auto",
-    "IMAGES_EDIT_OPENAI_API_BASE_URL": "http://cli-proxy-api.default.svc.cluster.local:8317/v1",
-    "IMAGES_EDIT_OPENAI_API_KEY": "$env:CLI_PROXY_API_KEY"
+    "IMAGE_GENERATION_DEFAULT_MODEL": "51a9a9ac-423f-41c0-bf1c-e892151e4715:gpt-image-2.6",
+    "IMAGE_EDIT_DEFAULT_MODEL": "51a9a9ac-423f-41c0-bf1c-e892151e4715:gpt-image-2.6",
+    "IMAGE_CONNECTIONS": [
+      {
+        "id": "51a9a9ac-423f-41c0-bf1c-e892151e4715",
+        "name": "OpenAI",
+        "type": "openai",
+        "url": "http://cli-proxy-api.default.svc.cluster.local:8317/v1",
+        "key": "$env:CLI_PROXY_API_KEY",
+        "config": {
+          "enable": true,
+          "capabilities": {
+            "image_generation": true,
+            "image_edit": true
+          },
+          "model_ids": [
+            "gpt-image-2.6"
+          ],
+          "access_grants": [
+            {
+              "principal_type": "user",
+              "principal_id": "*",
+              "permission": "read"
+            }
+          ],
+          "auth_type": "bearer",
+          "headers": {},
+          "size": "auto",
+          "edit_size": "auto",
+          "steps": 50,
+          "api_version": "",
+          "params": {},
+          "endpoint_method": "",
+          "workflow": "",
+          "nodes": [],
+          "edit_workflow": "",
+          "edit_nodes": []
+        }
+      }
+    ]
   },
   "tasks": {
     "TASK_MODEL_EXTERNAL": "claude-haiku-5-5"
