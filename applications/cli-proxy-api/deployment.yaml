@@ -30,7 +30,7 @@ spec:
       initContainers:
         # ConfigMap 템플릿의 자리표시자를 시크릿 값으로 치환해 쓰기 가능한 emptyDir에 config.yaml을 만든다.
         - name: render-config
-          image: eceasy/cli-proxy-api:v8.0.67
+          image: eceasy/cli-proxy-api:v8.0.80
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -79,7 +79,7 @@ spec:
               memory: "64Mi"
       containers:
         - name: cli-proxy-api
-          image: eceasy/cli-proxy-api:v8.0.67
+          image: eceasy/cli-proxy-api:v8.0.80
           imagePullPolicy: IfNotPresent
           command: ["/CLIProxyAPI/CLIProxyAPI", "-config", "/conf/config.yaml"]
           ports:

@@ -15,6 +15,8 @@
             "claude-opus-5-5",
             "claude-sonnet-5-5",
             "claude-haiku-5-5",
+            "gpt-6.2-sol",
+            "gpt-6.2-astra",
             "gpt-6.1-sol",
             "gpt-6.1-terra",
             "gpt-6-sol"
@@ -34,6 +36,8 @@
     { "id": "claude-opus-5-5", "name": "Claude Opus 5.5", "meta": { "description": "CLIProxy · Claude 구독", "hidden": false } },
     { "id": "claude-sonnet-5-5", "name": "Claude Sonnet 5.5", "meta": { "description": "CLIProxy · Claude 구독", "hidden": false } },
     { "id": "claude-haiku-5-5", "name": "Claude Haiku 5.5", "meta": { "description": "CLIProxy · Claude 구독", "hidden": false } },
+    { "id": "gpt-6.2-sol", "name": "GPT-6.2 Sol", "meta": { "description": "CLIProxy · ChatGPT(Codex) 구독", "hidden": false } },
+    { "id": "gpt-6.2-astra", "name": "GPT-6.2 Astra", "meta": { "description": "CLIProxy · ChatGPT(Codex) 구독", "hidden": false } },
     { "id": "gpt-6.1-sol", "name": "GPT-6.1 Sol", "meta": { "description": "CLIProxy · ChatGPT(Codex) 구독", "hidden": false } },
     { "id": "gpt-6.1-terra", "name": "GPT-6.1 Terra", "meta": { "description": "CLIProxy · ChatGPT(Codex) 구독", "hidden": false } },
     { "id": "gpt-6-sol", "name": "GPT-6 Sol", "meta": { "description": "CLIProxy · ChatGPT(Codex) 구독", "hidden": false } },
@@ -54,6 +58,8 @@
       "claude-opus-5-5",
       "claude-fable-5-2",
       "claude-haiku-5-5",
+      "gpt-6.2-sol",
+      "gpt-6.2-astra",
       "gpt-6.1-sol",
       "gpt-6.1-terra",
       "gpt-6-sol"
