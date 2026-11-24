@@ -24,16 +24,18 @@
 | **Machine** | q35, SeaBIOS, Qemu Agent 활성, 부팅 시 자동 시작 (order=1)        |
 | **용도**    | k3s 클러스터 (ArgoCD, OpenWebUI, Ghost, n8n, Beszel 등)           |
 
-### VM 101: Hermes (삭제 예정)
+### VM 102: sandbox (격리 개발 샌드박스)
 
-| 항목        | 설정값                                                  |
-| ----------- | ------------------------------------------------------- |
-| **CPU**     | 2 cores (Type: host)                                    |
-| **RAM**     | 4096 MiB (4GB), Ballooning 활성 (Min: 512)              |
-| **Disk**    | 32GB, local-lvm (NVMe), VirtIO Block                    |
-| **Network** | VirtIO paravirtualized, Bridge: vmbr0, Firewall 활성    |
-| **OS**      | Ubuntu 26.04 Server                                     |
-| **Machine** | q35, OVMF (UEFI), Qemu Agent 활성, 부팅 시 자동 시작    |
+| 항목        | 설정값                                                                  |
+| ----------- | ----------------------------------------------------------------------- |
+| **CPU**     | 4 cores (Type: host, k3s와 공유)                                        |
+| **RAM**     | 8192 MiB, Ballooning 활성 (Min: 2048)                                   |
+| **Disk**    | 60GB, local-lvm (NVMe), VirtIO SCSI, SSD emulation, Discard 활성        |
+| **Network** | vmbr0, DHCP `192.168.0.54`, Proxmox Firewall (`/etc/pve/firewall/102.fw`) |
+| **OS**      | Ubuntu 24.04 cloud image + XFCE(lightdm 자동 로그인), 사용자 `dev`      |
+| **접속**    | SSH 별칭 `sandbox` (전용 키 `~/.ssh/sandbox`), RustDesk Direct IP 21118 over Tailscale (`tag:sandbox`) |
+| **격리**    | OUT: 사설망·CGNAT 대역 DROP (DNS `192.168.0.1:53`만 허용), IN: LAN SSH·Tailscale UDP만 허용 |
+| **용도**    | Claude Code 등 에이전트 자유 실행용. 홈랩 시크릿·개인 키 반입 금지      |
 
 ## Secret 보호 규칙
 
