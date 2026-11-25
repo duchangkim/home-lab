@@ -35,7 +35,7 @@
 | **OS**      | Ubuntu 24.04 cloud image + XFCE(lightdm 자동 로그인), 사용자 `dev`      |
 | **접속**    | SSH 별칭 `sandbox` (전용 키 `~/.ssh/sandbox`), RustDesk Direct IP 21118 over Tailscale (`tag:sandbox`) |
 | **격리**    | OUT: 사설망·CGNAT 대역 DROP (DNS `192.168.0.1:53`만 허용), IN: LAN SSH·Tailscale UDP만 허용 |
-| **용도**    | Claude Code 등 에이전트 자유 실행용. 홈랩 시크릿·개인 키 반입 금지      |
+| **용도**    | OpenCode(Go 요금제) 등 에이전트 자유 실행용. 홈랩 시크릿·개인 키 반입 금지 |
 
 ## Secret 보호 규칙
 
